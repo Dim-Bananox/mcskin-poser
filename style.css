@@ -1,0 +1,419 @@
+body {
+    background: #0f172a;
+    color: white;
+    font-family: Arial, sans-serif;
+    margin: 0;
+}
+
+h1 {
+    text-align: center;
+    margin: 15px 0;
+    font-family: 'Arial Black', 'Helvetica Bold', sans-serif;
+    font-size: 2.5rem;
+    font-weight: 900;
+    letter-spacing: 2px;
+    text-shadow: 3px 3px 6px rgba(0, 0, 0, 0.5);
+    background: linear-gradient(135deg, #60a5fa, #a78bfa);
+    -webkit-background-clip: text;
+    -webkit-text-fill-color: transparent;
+    background-clip: text;
+}
+
+.app {
+    display: flex;
+    gap: 15px;
+    padding: 15px;
+    height: calc(100vh - 70px);
+    box-sizing: border-box;
+}
+
+.panel-left, .panel-right {
+    background: #141823;
+    padding: 10px;
+    border-radius: 8px;
+    display: flex;
+    flex-direction: column;
+    gap: 8px;
+    border: 1px solid rgba(255, 255, 255, 0.15);
+    overflow-y: auto;
+    overflow-x: hidden;
+}
+
+.panel-left::-webkit-scrollbar,
+.panel-right::-webkit-scrollbar {
+    width: 6px;
+}
+
+.panel-left::-webkit-scrollbar-track,
+.panel-right::-webkit-scrollbar-track {
+    background: transparent;
+}
+
+.panel-left::-webkit-scrollbar-thumb,
+.panel-right::-webkit-scrollbar-thumb {
+    background: #334155;
+    border-radius: 3px;
+}
+
+.panel-left::-webkit-scrollbar-thumb:hover,
+.panel-right::-webkit-scrollbar-thumb:hover {
+    background: #475569;
+}
+
+.panel-left { width: 190px; }
+.panel-right { width: 210px; }
+
+#viewer {
+    flex: 1;
+    display: flex;
+    justify-content: center;
+    align-items: center;
+}
+
+.skinButtons { display: flex; gap: 10px; }
+
+.skinBtn {
+    width: 60px;
+    height: 60px;
+    border: none;
+    background-color: transparent;
+    background-size: contain;
+    background-repeat: no-repeat;
+    background-position: center;
+    cursor: pointer;
+}
+
+input[type=range] { width: 100%; }
+
+button { 
+    padding: 5px; 
+    border-radius: 6px; 
+    border: none; 
+    cursor: pointer;
+    transition: all 0.2s ease;
+}
+
+button:hover {
+    transform: translateY(-2px);
+    box-shadow: 0 2px 8px rgba(0,0,0,0.2);
+}
+
+button:active {
+    transform: translateY(0);
+}
+
+.reset { font-size: 12px; }
+#resetAll { background: #dc2626; color: white; font-weight: bold; }
+
+#uploadedSkins {
+    display: grid;
+    grid-template-columns: repeat(2, 1fr);
+    gap: 10px;
+}
+
+.addSkinBtn {
+    font-size: 24px;
+    font-weight: bold;
+    width: 100%;
+    height: 120px;
+    padding: 0;
+    background: #111827;
+    border: 2px dashed rgba(255,255,255,0.3);
+    border-radius: 6px;
+    color: rgba(255,255,255,0.6);
+    transition: all 0.2s ease;
+}
+
+.addSkinBtn:hover {
+    border-color: rgba(255,255,255,0.6);
+    color: white;
+}
+
+.charactersList { display:flex; flex-direction:column; gap:6px; margin-top:8px; }
+.characterItem { padding:6px; background:#0b1220; border-radius:6px; cursor:pointer; font-size:13px; display:flex; justify-content:space-between; align-items:center; }
+.characterItem.active { outline: 2px solid #60a5fa; }
+.characterItem span { flex: 1; }
+.deleteBtn, .skinDeleteBtn { background: #dc2626; color: white; border: none; border-radius: 4px; padding: 2px 6px; cursor: pointer; font-size: 12px; font-weight: bold; }
+.deleteBtn:hover, .skinDeleteBtn:hover { background: #991b1b; }
+
+.visibilityBtn { background: #16a34a; color: white; border: none; border-radius: 4px; padding: 2px 6px; cursor: pointer; font-size: 12px; margin-right: 5px; }
+.visibilityBtn:hover { background: #15803d; }
+
+/* Character viewport in render area */
+.charViewport {
+    position: absolute;
+    width: 320px;
+    height: 420px;
+    left: 20px;
+    top: 20px;
+    border-radius: 8px;
+    overflow: visible;
+    background: transparent;
+    border: 2px solid transparent;
+    display:flex;
+    justify-content:center;
+    align-items:center;
+    cursor: default;
+    z-index: 3;
+    transform-origin: middle center;
+}
+.charViewport.active { 
+    border-color: #60a5fa; 
+    box-shadow: inset 0 0 0 2px #60a5fa;
+}
+.charViewport.movable { border-color: #22c55e; box-shadow: 0 0 6px rgba(34,197,94,0.25); cursor: grab; }
+.charViewport.movable.dragging { cursor: grabbing; opacity: 0.9; }
+.charViewport.dragging:not(.movable) { opacity: 0.9; }
+.charViewport canvas { transform-origin: middle center; width: 100%; height: 100%; display: block; }
+
+.deleteViewportBtn {
+    position: absolute;
+    top: 4px;
+    right: 4px;
+    width: 24px;
+    height: 24px;
+    padding: 0;
+    background: #dc2626;
+    color: white;
+    font-weight: bold;
+    z-index: 10;
+}
+
+.resizeViewportBtn {
+    position: absolute;
+    top: 4px;
+    left: 4px;
+    width: 24px;
+    height: 24px;
+    padding: 0;
+    background: #8b5cf6;
+    color: white;
+    font-weight: bold;
+    z-index: 10;
+    cursor: grab;
+}
+
+.resizeViewportBtn:hover {
+    background: #a78bfa;
+}
+
+.charViewport.resizing {
+    opacity: 0.85;
+}
+
+.charViewport.resizing .resizeViewportBtn {
+    cursor: grabbing;
+}
+
+.skinPreview {
+    background: #111827;
+    padding: 6px;
+    border-radius: 6px;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    cursor: pointer;
+    border: 2px solid transparent;
+    position: relative;
+}
+
+.skinPreview.active { border-color: #3b82f6; }
+.skinPreview canvas { pointer-events: none; }
+.skinName { font-size: 11px; text-align: center; margin-top: 4px; opacity: 0.85; }
+.skinDeleteBtn { position: absolute; top: 2px; right: 2px; }
+
+#poseGalleryModal {
+    display: none;
+    position: fixed;
+    inset: 0;
+    background: rgba(0,0,0,0.7);
+    justify-content: center;
+    align-items: center;
+}
+
+#poseGalleryContent {
+    background: #1e1e2f;
+    padding: 15px;
+    border-radius: 10px;
+    display: flex;
+    flex-wrap: wrap;
+    gap: 12px;
+    max-height: 80%;
+    overflow-y: auto;
+}
+
+.poseCard {
+    width: 110px;
+    background: #111827;
+    padding: 8px;
+    border-radius: 6px;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    gap: 6px;
+}
+
+.poseCard button { width: 100%; }
+
+.bgButtons {
+    display: flex;
+    flex-direction: column;
+    gap: 6px;
+}
+
+.bgButtons button { padding: 6px; font-size: 12px; background: #1e293b; color: white; border-radius: 6px; }
+.bgButtons button:hover { background: #334155; }
+.bgButtons button.active { outline: 2px solid #22c55e; }
+
+#bgColorPicker { width: 100%; height: 40px; border: none; border-radius: 8px; cursor: pointer; }
+
+/* Viewer stack */
+
+#viewerContainer {
+    position: relative;
+    flex: 1;
+    overflow: hidden;
+    min-width: 800px;
+    min-height: 600px;
+}
+
+/* Background image/color */
+#backgroundLayer {
+    position: absolute;
+    inset: 0;
+    z-index: 0;
+}
+
+/* Skin viewer canvas */
+#viewer {
+    position: absolute;
+    inset: 0;
+    z-index: 1;
+}
+
+/* Modal ALWAYS on top */
+#poseGalleryModal {
+    position: fixed;
+    inset: 0;
+    z-index: 9999;
+}
+
+#viewer canvas {
+    pointer-events: auto;
+}
+
+#poseGalleryModal {
+    pointer-events: auto;
+}
+
+#viewer {
+    position: absolute;
+    inset: 0;
+    z-index: 1;
+}
+
+#viewer.dragging {
+    cursor: grabbing;
+}
+
+#moveModeBtn.active {
+    background: #22c55e;
+    color: black;
+    font-weight: bold;
+}
+
+#renderArea {
+    position: relative;
+    flex: 1;
+    background: transparent;
+
+    border: 2px dashed rgba(255,255,255,0.4);
+    border-radius: 10px;
+
+    overflow: hidden;
+
+    display: flex;
+    justify-content: center;
+    align-items: center;
+}
+
+/* Background */
+#backgroundLayer {
+    position: absolute;
+    inset: 0;
+    z-index: 0;
+}
+
+/* Viewer */
+#viewer {
+    position: absolute;
+    inset: 0;
+    z-index: 1;
+
+    display: flex;
+    justify-content: center;
+    align-items: center;
+}
+
+#viewerContainer {
+    border: 2px dashed #334155;
+}
+
+#viewerContainer.exporting {
+    border: none;
+}
+
+#renderArea.exporting {
+    border: none;
+}
+
+.toolbar {
+    display: flex;
+    gap: 10px;
+    align-items: center;
+    justify-content: center;
+    margin: 10px 15px;
+    padding: 12px 15px;
+    background: #141823;
+    border-radius: 8px;
+    border: 1px solid rgba(255, 255, 255, 0.15);
+}
+
+.toolbar button {
+    padding: 8px 12px;
+    background: #1e293b;
+    border: 1px solid #334155;
+    color: white;
+    border-radius: 4px;
+    cursor: pointer;
+    font-weight: 500;
+}
+
+.toolbar button:hover {
+    background: #334155;
+}
+
+.toolbar button.selected {
+    border: 2px solid green;
+}
+
+.toolbar input[type="color"] {
+    width: 40px;
+    height: 30px;
+    border: none;
+    cursor: pointer;
+}
+
+.toolbar input[type="range"] {
+    width: 100px;
+}
+
+#drawCanvas {
+    position: absolute;
+    top: 0;
+    left: 0;
+    width: 100%;
+    height: 100%;
+    pointer-events: none;
+    z-index: 2;
+}
