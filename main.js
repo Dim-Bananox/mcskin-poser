@@ -33,6 +33,11 @@ const colorPicker = document.getElementById("colorPicker");
 const brushSize = document.getElementById("brushSize");
 const clearCanvasBtn = document.getElementById("clearCanvasBtn");
 
+const uploadSkinBtn = document.getElementById("uploadSkinBtn");
+
+const playerUsername = document.getElementById("playerUsername");
+const fetchSkinBtn = document.getElementById("fetchSkinBtn");
+
 const drawCanvas = document.getElementById("drawCanvas");
 
 // --- STATE ---
@@ -81,8 +86,63 @@ loadAlexBtn.style.backgroundImage = "url('./heads/alex_head.png')";
 loadSteveBtn.onclick = () => setSkin(STEVE_SKIN);
 loadAlexBtn.onclick = () => setSkin(ALEX_SKIN);
 
+// Fetch skin from username
+fetchSkinBtn.onclick = async () => {
+    const username = playerUsername.value.trim();
+    if (!username) {
+        alert('Please enter a Minecraft username');
+        return;
+    }
+    
+    try {
+        // Get UUID from username
+        const uuidResponse = await fetch(`https://api.allorigins.win/get?url=${encodeURIComponent(`https://api.mojang.com/users/profiles/minecraft/${username}`)}`);
+        if (!uuidResponse.ok) {
+            throw new Error('Player not found');
+        }
+        const uuidDataWrapper = await uuidResponse.json();
+        const uuidData = JSON.parse(uuidDataWrapper.contents);
+        const uuid = uuidData.id;
+        
+        // Get skin from UUID
+        const profileResponse = await fetch(`https://api.allorigins.win/get?url=${encodeURIComponent(`https://sessionserver.mojang.com/session/minecraft/profile/${uuid}`)}`);
+        if (!profileResponse.ok) {
+            throw new Error('Failed to fetch skin');
+        }
+        const profileDataWrapper = await profileResponse.json();
+        const profileData = JSON.parse(profileDataWrapper.contents);
+        
+        // Parse the properties to find the skin URL
+        const properties = profileData.properties;
+        const texturesProperty = properties.find(prop => prop.name === 'textures');
+        if (!texturesProperty) {
+            throw new Error('No skin found');
+        }
+        
+        const decoded = JSON.parse(atob(texturesProperty.value));
+        const skinUrl = decoded.textures.SKIN.url;
+        
+        // Fetch the skin image as base64 to avoid CORS
+        const imageResponse = await fetch(`https://api.allorigins.win/get?url=${encodeURIComponent(skinUrl)}`);
+        const imageData = await imageResponse.json();
+        const imageUrl = imageData.contents;
+        
+        // Set the skin
+        setSkin(imageUrl);
+        
+        // Add to uploaded skins for saving
+        uploadedSkins.push({ name: username, url: imageUrl });
+        renderUploadedSkins();
+        
+    } catch (error) {
+        alert('Error fetching skin: ' + error.message);
+    }
+};
+
 const uploadBtn = document.getElementById("uploadBtn");
 uploadBtn.onclick = () => skinUpload.click();
+
+uploadSkinBtn.onclick = () => skinUpload.click();
 
 skinUpload.addEventListener("change", e => {
     const file = e.target.files[0];
