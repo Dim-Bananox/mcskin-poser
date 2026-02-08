@@ -18,6 +18,7 @@ export function initApp() {
   const playerUsername = document.getElementById("playerUsername");
   const fetchSkinBtn = document.getElementById("fetchSkinBtn");
   const themeToggle = document.getElementById("themeToggle");
+  const languageSelect = document.getElementById("languageSelect");
 
   const savePoseBtn = document.getElementById("savePose");
   const loadPoseBtn = document.getElementById("loadPose");
@@ -83,25 +84,401 @@ export function initApp() {
   let shapeBaseImage = null;
   let shapeLastCoords = null;
 
+  let characterClipboard = null;
+  let lastContextMenuPosition = null;
+
   // Initialize pen as active
   let penInitialized = false;
 
   // --- UTILS ---
   const deg = v => (v * Math.PI) / 180;
 
+  const translations = {
+    en: {
+      appTitle: "Minecraft Scene Creator",
+      languageLabel: "Language",
+      toggleTheme: "Toggle theme",
+      lightMode: "Light Mode",
+      darkMode: "Dark Mode",
+      toolPen: "Pen",
+      toolLine: "Line",
+      toolEraser: "Eraser",
+      toolShape: "Shape",
+      brushSize: "Brush Size",
+      clearCanvas: "Clear Canvas",
+      exportScene: "Export Scene",
+      mySkins: "My Skins",
+      enterMinecraftName: "Enter a Minecraft name",
+      importSkin: "Import Skin",
+      myPoses: "My Poses",
+      savePose: "Save Pose",
+      loadPose: "Load Pose",
+      myCharacter: "My Character",
+      addCharacter: "Add Character",
+      background: "Background",
+      transparent: "Transparent",
+      uploadImage: "Upload Image",
+      removeImage: "Remove Image",
+      head: "Head",
+      arms: "Arms",
+      legs: "Legs",
+      resetUpDown: "Reset Up/Down",
+      resetLeftRight: "Reset Left/Right",
+      resetRightArm: "Reset Right Arm",
+      resetLeftArm: "Reset Left Arm",
+      resetLegs: "Reset Legs",
+      resetAll: "Reset All",
+      ok: "OK",
+      cancel: "Cancel",
+      nameCharacter: "Name your character",
+      characterNameUsed: "Character name already used.",
+      namePose: "Name your pose",
+      posePlaceholder: "My pose",
+      poseExists: "Pose already exists.",
+      poseSaved: "Pose saved successfully.",
+      noPoses: "No poses saved yet.",
+      skinImported: "Skin imported successfully",
+      enterMinecraftNameMessage: "Please enter a Minecraft name.",
+      playerNotFound: "Player not found",
+      failedFetchSkin: "Failed to fetch skin",
+      noSkinFound: "No skin found",
+      selectCharacterFirst: "Select a character first",
+      apply: "Apply",
+      delete: "Delete",
+      hide: "Hide",
+      show: "Show",
+      copy: "Copy",
+      paste: "Paste",
+      move: "Move",
+      resize: "Resize",
+      shapeRectangle: "Rectangle",
+      shapeCircle: "Circle",
+      shapeTriangle: "Triangle"
+    },
+    fr: {
+      appTitle: "Createur de Scene Minecraft",
+      languageLabel: "Langue",
+      toggleTheme: "Changer le theme",
+      lightMode: "Mode Clair",
+      darkMode: "Mode Sombre",
+      toolPen: "Stylo",
+      toolLine: "Ligne",
+      toolEraser: "Gomme",
+      toolShape: "Forme",
+      brushSize: "Taille du pinceau",
+      clearCanvas: "Effacer le canevas",
+      exportScene: "Exporter la scene",
+      mySkins: "Mes skins",
+      enterMinecraftName: "Entrer un nom Minecraft",
+      importSkin: "Importer un skin",
+      myPoses: "Mes poses",
+      savePose: "Sauver la pose",
+      loadPose: "Charger la pose",
+      myCharacter: "Mon personnage",
+      addCharacter: "Ajouter un personnage",
+      background: "Arriere-plan",
+      transparent: "Transparent",
+      uploadImage: "Importer une image",
+      removeImage: "Retirer l'image",
+      head: "Tete",
+      arms: "Bras",
+      legs: "Jambes",
+      resetUpDown: "Reinitialiser haut/bas",
+      resetLeftRight: "Reinitialiser gauche/droite",
+      resetRightArm: "Reinitialiser bras droit",
+      resetLeftArm: "Reinitialiser bras gauche",
+      resetLegs: "Reinitialiser jambes",
+      resetAll: "Tout reinitialiser",
+      ok: "OK",
+      cancel: "Annuler",
+      nameCharacter: "Nommer votre personnage",
+      characterNameUsed: "Nom de personnage deja utilise.",
+      namePose: "Nommer votre pose",
+      posePlaceholder: "Ma pose",
+      poseExists: "La pose existe deja.",
+      poseSaved: "Pose enregistree.",
+      noPoses: "Aucune pose enregistree.",
+      skinImported: "Skin importe avec succes",
+      enterMinecraftNameMessage: "Veuillez entrer un nom Minecraft.",
+      playerNotFound: "Joueur introuvable",
+      failedFetchSkin: "Echec du telechargement du skin",
+      noSkinFound: "Aucun skin trouve",
+      selectCharacterFirst: "Selectionnez un personnage d'abord",
+      apply: "Appliquer",
+      delete: "Supprimer",
+      hide: "Cacher",
+      show: "Afficher",
+      copy: "Copier",
+      paste: "Coller",
+      move: "Deplacer",
+      resize: "Redimensionner",
+      shapeRectangle: "Rectangle",
+      shapeCircle: "Cercle",
+      shapeTriangle: "Triangle"
+    },
+    es: {
+      appTitle: "Creador de Escenas Minecraft",
+      languageLabel: "Idioma",
+      toggleTheme: "Cambiar tema",
+      lightMode: "Modo Claro",
+      darkMode: "Modo Oscuro",
+      toolPen: "Lapiz",
+      toolLine: "Linea",
+      toolEraser: "Borrador",
+      toolShape: "Forma",
+      brushSize: "Tamano del pincel",
+      clearCanvas: "Borrar lienzo",
+      exportScene: "Exportar escena",
+      mySkins: "Mis skins",
+      enterMinecraftName: "Introduce un nombre de Minecraft",
+      importSkin: "Importar skin",
+      myPoses: "Mis poses",
+      savePose: "Guardar pose",
+      loadPose: "Cargar pose",
+      myCharacter: "Mi personaje",
+      addCharacter: "Agregar personaje",
+      background: "Fondo",
+      transparent: "Transparente",
+      uploadImage: "Subir imagen",
+      removeImage: "Quitar imagen",
+      head: "Cabeza",
+      arms: "Brazos",
+      legs: "Piernas",
+      resetUpDown: "Reiniciar arriba/abajo",
+      resetLeftRight: "Reiniciar izquierda/derecha",
+      resetRightArm: "Reiniciar brazo derecho",
+      resetLeftArm: "Reiniciar brazo izquierdo",
+      resetLegs: "Reiniciar piernas",
+      resetAll: "Reiniciar todo",
+      ok: "OK",
+      cancel: "Cancelar",
+      nameCharacter: "Nombra tu personaje",
+      characterNameUsed: "El nombre ya esta en uso.",
+      namePose: "Nombra tu pose",
+      posePlaceholder: "Mi pose",
+      poseExists: "La pose ya existe.",
+      poseSaved: "Pose guardada.",
+      noPoses: "No hay poses guardadas.",
+      skinImported: "Skin importado correctamente",
+      enterMinecraftNameMessage: "Introduce un nombre de Minecraft.",
+      playerNotFound: "Jugador no encontrado",
+      failedFetchSkin: "Error al obtener el skin",
+      noSkinFound: "No se encontro skin",
+      selectCharacterFirst: "Selecciona un personaje primero",
+      apply: "Aplicar",
+      delete: "Eliminar",
+      hide: "Ocultar",
+      show: "Mostrar",
+      copy: "Copiar",
+      paste: "Pegar",
+      move: "Mover",
+      resize: "Redimensionar",
+      shapeRectangle: "Rectangulo",
+      shapeCircle: "Circulo",
+      shapeTriangle: "Triangulo"
+    },
+    de: {
+      appTitle: "Minecraft Szenenersteller",
+      languageLabel: "Sprache",
+      toggleTheme: "Thema wechseln",
+      lightMode: "Heller Modus",
+      darkMode: "Dunkler Modus",
+      toolPen: "Stift",
+      toolLine: "Linie",
+      toolEraser: "Radierer",
+      toolShape: "Form",
+      brushSize: "Pinselgroesse",
+      clearCanvas: "Leinwand leeren",
+      exportScene: "Szene exportieren",
+      mySkins: "Meine Skins",
+      enterMinecraftName: "Minecraft Namen eingeben",
+      importSkin: "Skin importieren",
+      myPoses: "Meine Posen",
+      savePose: "Pose speichern",
+      loadPose: "Pose laden",
+      myCharacter: "Mein Charakter",
+      addCharacter: "Charakter hinzufuegen",
+      background: "Hintergrund",
+      transparent: "Transparent",
+      uploadImage: "Bild hochladen",
+      removeImage: "Bild entfernen",
+      head: "Kopf",
+      arms: "Arme",
+      legs: "Beine",
+      resetUpDown: "Oben/Unten zuruecksetzen",
+      resetLeftRight: "Links/Rechts zuruecksetzen",
+      resetRightArm: "Rechter Arm zuruecksetzen",
+      resetLeftArm: "Linker Arm zuruecksetzen",
+      resetLegs: "Beine zuruecksetzen",
+      resetAll: "Alles zuruecksetzen",
+      ok: "OK",
+      cancel: "Abbrechen",
+      nameCharacter: "Charakter benennen",
+      characterNameUsed: "Name bereits verwendet.",
+      namePose: "Pose benennen",
+      posePlaceholder: "Meine Pose",
+      poseExists: "Pose existiert bereits.",
+      poseSaved: "Pose gespeichert.",
+      noPoses: "Noch keine Posen gespeichert.",
+      skinImported: "Skin erfolgreich importiert",
+      enterMinecraftNameMessage: "Bitte Minecraft Namen eingeben.",
+      playerNotFound: "Spieler nicht gefunden",
+      failedFetchSkin: "Skin konnte nicht geladen werden",
+      noSkinFound: "Kein Skin gefunden",
+      selectCharacterFirst: "Bitte zuerst einen Charakter waehlen",
+      apply: "Anwenden",
+      delete: "Loeschen",
+      hide: "Ausblenden",
+      show: "Anzeigen",
+      copy: "Kopieren",
+      paste: "Einfuegen",
+      move: "Bewegen",
+      resize: "Groesse aendern",
+      shapeRectangle: "Rechteck",
+      shapeCircle: "Kreis",
+      shapeTriangle: "Dreieck"
+    },
+    it: {
+      appTitle: "Creatore di Scene Minecraft",
+      languageLabel: "Lingua",
+      toggleTheme: "Cambia tema",
+      lightMode: "Modalita Chiara",
+      darkMode: "Modalita Scura",
+      toolPen: "Penna",
+      toolLine: "Linea",
+      toolEraser: "Gomma",
+      toolShape: "Forma",
+      brushSize: "Dimensione pennello",
+      clearCanvas: "Pulisci tela",
+      exportScene: "Esporta scena",
+      mySkins: "I miei skin",
+      enterMinecraftName: "Inserisci un nome Minecraft",
+      importSkin: "Importa skin",
+      myPoses: "Le mie pose",
+      savePose: "Salva posa",
+      loadPose: "Carica posa",
+      myCharacter: "Il mio personaggio",
+      addCharacter: "Aggiungi personaggio",
+      background: "Sfondo",
+      transparent: "Trasparente",
+      uploadImage: "Carica immagine",
+      removeImage: "Rimuovi immagine",
+      head: "Testa",
+      arms: "Braccia",
+      legs: "Gambe",
+      resetUpDown: "Reimposta su/giu",
+      resetLeftRight: "Reimposta sinistra/destra",
+      resetRightArm: "Reimposta braccio destro",
+      resetLeftArm: "Reimposta braccio sinistro",
+      resetLegs: "Reimposta gambe",
+      resetAll: "Reimposta tutto",
+      ok: "OK",
+      cancel: "Annulla",
+      nameCharacter: "Dai un nome al personaggio",
+      characterNameUsed: "Nome gia usato.",
+      namePose: "Dai un nome alla posa",
+      posePlaceholder: "La mia posa",
+      poseExists: "La posa esiste gia.",
+      poseSaved: "Posa salvata.",
+      noPoses: "Nessuna posa salvata.",
+      skinImported: "Skin importato con successo",
+      enterMinecraftNameMessage: "Inserisci un nome Minecraft.",
+      playerNotFound: "Giocatore non trovato",
+      failedFetchSkin: "Impossibile ottenere lo skin",
+      noSkinFound: "Nessuno skin trovato",
+      selectCharacterFirst: "Seleziona prima un personaggio",
+      apply: "Applica",
+      delete: "Elimina",
+      hide: "Nascondi",
+      show: "Mostra",
+      copy: "Copia",
+      paste: "Incolla",
+      move: "Sposta",
+      resize: "Ridimensiona",
+      shapeRectangle: "Rettangolo",
+      shapeCircle: "Cerchio",
+      shapeTriangle: "Triangolo"
+    }
+  };
+
+  let currentLanguage = localStorage.getItem("language") || "en";
+
+  const t = key => translations[currentLanguage]?.[key] || translations.en[key] || key;
+
+  const updateThemeLabel = () => {
+    if (!themeToggle) return;
+    const isLight = document.body.classList.contains("light");
+    themeToggle.textContent = isLight ? t("darkMode") : t("lightMode");
+  };
+
+  const applyLanguage = nextLanguage => {
+    if (nextLanguage) currentLanguage = nextLanguage;
+    localStorage.setItem("language", currentLanguage);
+    if (languageSelect) languageSelect.value = currentLanguage;
+
+    document.querySelectorAll("[data-i18n]").forEach(el => {
+      el.textContent = t(el.dataset.i18n);
+    });
+    document.querySelectorAll("[data-i18n-placeholder]").forEach(el => {
+      el.placeholder = t(el.dataset.i18nPlaceholder);
+    });
+    document.querySelectorAll("[data-i18n-title]").forEach(el => {
+      el.title = t(el.dataset.i18nTitle);
+    });
+    document.querySelectorAll("[data-i18n-aria]").forEach(el => {
+      el.setAttribute("aria-label", t(el.dataset.i18nAria));
+    });
+
+    const shapeSelectEl = document.getElementById("shapeSelect");
+    if (shapeSelectEl) {
+      Array.from(shapeSelectEl.options).forEach(option => {
+        if (option.value === "rect") option.textContent = t("shapeRectangle");
+        if (option.value === "circle") option.textContent = t("shapeCircle");
+        if (option.value === "triangle") option.textContent = t("shapeTriangle");
+      });
+    }
+
+    const menu = document.getElementById("characterContextMenu");
+    if (menu) {
+      const copyBtn = menu.querySelector('[data-action="copy"]');
+      const pasteBtn = menu.querySelector('[data-action="paste"]');
+      if (copyBtn) copyBtn.textContent = t("copy");
+      if (pasteBtn) pasteBtn.textContent = t("paste");
+    }
+
+    document.querySelectorAll(".resizeViewportBtn").forEach(btn => {
+      btn.title = t("resize");
+      btn.setAttribute("aria-label", t("resize"));
+    });
+    document.querySelectorAll(".moveViewportBtn").forEach(btn => {
+      btn.title = t("move");
+      btn.setAttribute("aria-label", t("move"));
+    });
+
+    updateThemeLabel();
+    renderCharactersList();
+    renderGallery();
+  };
+
   const setTheme = theme => {
     document.body.classList.toggle("light", theme === "light");
-    if (themeToggle) themeToggle.textContent = theme === "light" ? "Dark" : "Light";
+    updateThemeLabel();
     localStorage.setItem("theme", theme);
   };
 
   if (themeToggle) {
     const storedTheme = localStorage.getItem("theme") || "dark";
+    applyLanguage(currentLanguage);
     setTheme(storedTheme);
     themeToggle.onclick = () => {
       const isLight = document.body.classList.contains("light");
       setTheme(isLight ? "dark" : "light");
     };
+  }
+
+  if (languageSelect) {
+    languageSelect.value = currentLanguage;
+    languageSelect.onchange = e => applyLanguage(e.target.value);
   }
 
   function setSkin(url) {
@@ -157,8 +534,8 @@ export function initApp() {
     modalLabel.style.display = hasLabel ? "block" : "none";
     modalInput.style.display = hasInput ? "block" : "none";
 
-    modalConfirm.textContent = confirmText || "OK";
-    modalCancel.textContent = cancelText || "Cancel";
+    modalConfirm.textContent = confirmText || t("ok");
+    modalCancel.textContent = cancelText || t("cancel");
     modalCancel.style.display = showCancel === false ? "none" : "inline-flex";
 
     appModal.classList.add("open");
@@ -208,7 +585,7 @@ export function initApp() {
       const cleanName = (playerUsername?.value || "").trim();
       if (!cleanName) {
         await openModal({
-          message: "Please enter a Minecraft name.",
+          message: t("enterMinecraftNameMessage"),
           showInput: false,
           showCancel: false
         });
@@ -219,25 +596,25 @@ export function initApp() {
         const uuidResponse = await fetch(
           `/mojang/users/profiles/minecraft/${encodeURIComponent(cleanName)}`
         );
-        if (!uuidResponse.ok) throw new Error("Player not found");
+        if (!uuidResponse.ok) throw new Error(t("playerNotFound"));
 
         const uuidData = await uuidResponse.json();
-        if (!uuidData?.id) throw new Error("Player not found");
+        if (!uuidData?.id) throw new Error(t("playerNotFound"));
 
         const profileResponse = await fetch(
           `/session/session/minecraft/profile/${encodeURIComponent(uuidData.id)}`
         );
-        if (!profileResponse.ok) throw new Error("Failed to fetch skin");
+        if (!profileResponse.ok) throw new Error(t("failedFetchSkin"));
 
         const profileData = await profileResponse.json();
         const texturesProp = profileData?.properties?.find(
           prop => prop.name === "textures"
         );
-        if (!texturesProp?.value) throw new Error("No skin found");
+        if (!texturesProp?.value) throw new Error(t("noSkinFound"));
 
         const decoded = JSON.parse(atob(texturesProp.value));
         const skinUrl = decoded?.textures?.SKIN?.url;
-        if (!skinUrl) throw new Error("No skin found");
+        if (!skinUrl) throw new Error(t("noSkinFound"));
 
         const proxiedSkinUrl = skinUrl.startsWith("https://textures.minecraft.net")
           ? skinUrl.replace("https://textures.minecraft.net", "/textures")
@@ -252,13 +629,13 @@ export function initApp() {
         }
         renderUploadedSkins();
         await openModal({
-          message: "Skin imported successfully",
+          message: t("skinImported"),
           showInput: false,
           showCancel: false
         });
       } catch (error) {
         await openModal({
-          message: `Error fetching skin: ${error.message}`,
+          message: `${t("failedFetchSkin")}: ${error.message}`,
           showInput: false,
           showCancel: false
         });
@@ -355,6 +732,13 @@ export function initApp() {
     highlightActiveSkin();
   }
 
+  function updateHeadUsage() {
+    const selected = getSelectedCharacter();
+    const selectedSkin = selected?.skin || null;
+    if (loadSteveBtn) loadSteveBtn.classList.toggle("used", selectedSkin === STEVE_SKIN);
+    if (loadAlexBtn) loadAlexBtn.classList.toggle("used", selectedSkin === ALEX_SKIN);
+  }
+
   function highlightActiveSkin() {
     const sel = getSelectedCharacter();
     const activeSkin = sel?.skin;
@@ -364,6 +748,7 @@ export function initApp() {
     // Highlight built-in skins
     if (loadSteveBtn) loadSteveBtn.classList.toggle("active", activeSkin === STEVE_SKIN);
     if (loadAlexBtn) loadAlexBtn.classList.toggle("active", activeSkin === ALEX_SKIN);
+    updateHeadUsage();
   }
 
   // --- SLIDERS ---
@@ -377,6 +762,28 @@ export function initApp() {
     rightLegX: document.getElementById("rightLegX"),
     leftLegX: document.getElementById("leftLegX")
   };
+
+  const sliderMap = {
+    headX: ["head", "x"],
+    headY: ["head", "y"],
+    rightArmX: ["rightArm", "x"],
+    rightArmZ: ["rightArm", "z"],
+    leftArmX: ["leftArm", "x"],
+    leftArmZ: ["leftArm", "z"],
+    rightLegX: ["rightLeg", "x"],
+    leftLegX: ["leftLeg", "x"]
+  };
+
+  function applySliderValuesToCharacter(character) {
+    if (!character?.viewer?.playerObject) return;
+    const skin = character.viewer.playerObject.skin;
+    Object.entries(character.sliderValues || {}).forEach(([k, v]) => {
+      const map = sliderMap[k];
+      if (!map) return;
+      const [part, axis] = map;
+      if (skin[part]) skin[part].rotation[axis] = deg(v);
+    });
+  }
 
   function bindSlider(slider, part, axis) {
     if (!slider) return;
@@ -431,11 +838,11 @@ export function initApp() {
 
       const visibilityBtn = document.createElement("button");
       visibilityBtn.className = "visibilityBtn";
-      visibilityBtn.textContent = c.visible ? "Hide" : "Show";
+      visibilityBtn.textContent = c.visible ? t("hide") : t("show");
       visibilityBtn.onclick = e => {
         e.stopPropagation();
         c.visible = !c.visible;
-        visibilityBtn.textContent = c.visible ? "Hide" : "Show";
+        visibilityBtn.textContent = c.visible ? t("hide") : t("show");
         if (c.wrapper) c.wrapper.style.display = c.visible ? "block" : "none";
       };
 
@@ -464,6 +871,180 @@ export function initApp() {
       if (c.id === selectedCharacterId) item.classList.add("active");
       list.appendChild(item);
     });
+    updateHeadUsage();
+  }
+
+  function getUniqueCharacterName(baseName) {
+    const existing = characters.map(c => c.name.trim().toLowerCase());
+    if (!existing.includes(baseName.toLowerCase())) return baseName;
+    let i = 2;
+    while (existing.includes(`${baseName} ${i}`.toLowerCase())) i += 1;
+    return `${baseName} ${i}`;
+  }
+
+  function buildCharacterCopyData(character) {
+    if (!character) return null;
+    const width = character.wrapper?.offsetWidth || character.canvas?.width || 320;
+    const height = character.wrapper?.offsetHeight || character.canvas?.height || 420;
+    const left = Number.parseFloat(character.wrapper?.style.left) || 0;
+    const top = Number.parseFloat(character.wrapper?.style.top) || 0;
+    const cameraPos = character.viewer
+      ? {
+          x: character.viewer.camera.position.x,
+          y: character.viewer.camera.position.y,
+          z: character.viewer.camera.position.z
+        }
+      : character.cameraPos;
+
+    return {
+      name: character.name,
+      skin: character.skin,
+      sliderValues: { ...(character.sliderValues || {}) },
+      cameraPos,
+      visible: character.visible !== false,
+      width,
+      height,
+      left,
+      top,
+      posX: character._posX || 0,
+      posY: character._posY || 0
+    };
+  }
+
+  function pasteCharacterFromClipboard() {
+    if (!characterClipboard) return;
+    const data = characterClipboard;
+    const newName = getUniqueCharacterName(`${data.name} Copy`);
+    const newChar = createCharacter(newName, data.skin || STEVE_SKIN);
+    if (!newChar) return;
+
+    newChar.sliderValues = { ...(data.sliderValues || {}) };
+    applySliderValuesToCharacter(newChar);
+
+    if (data.cameraPos && newChar.viewer) {
+      newChar.viewer.camera.position.set(
+        data.cameraPos.x,
+        data.cameraPos.y,
+        data.cameraPos.z
+      );
+      newChar.viewer.controls.update();
+      newChar.cameraPos = { ...data.cameraPos };
+    }
+
+    if (Number.isFinite(data.width) && Number.isFinite(data.height)) {
+      newChar.wrapper.style.width = `${data.width}px`;
+      newChar.wrapper.style.height = `${data.height}px`;
+      if (newChar.viewer?.setSize) {
+        newChar.viewer.setSize(Math.round(data.width), Math.round(data.height));
+      } else if (newChar.canvas && newChar.viewer?.camera) {
+        newChar.canvas.width = Math.round(data.width);
+        newChar.canvas.height = Math.round(data.height);
+        newChar.viewer.camera.aspect = data.width / data.height;
+        newChar.viewer.camera.updateProjectionMatrix();
+      }
+      newChar.viewer?.render?.();
+    }
+
+    const offset = 20;
+    let left = (Number.isFinite(data.left) ? data.left : 0) + offset;
+    let top = (Number.isFinite(data.top) ? data.top : 0) + offset;
+    if (lastContextMenuPosition && renderArea) {
+      const rect = renderArea.getBoundingClientRect();
+      left = lastContextMenuPosition.x - rect.left;
+      top = lastContextMenuPosition.y - rect.top;
+    }
+    newChar.wrapper.style.left = `${left}px`;
+    newChar.wrapper.style.top = `${top}px`;
+
+    newChar._posX = (data.posX || 0) + offset;
+    newChar._posY = (data.posY || 0) + offset;
+    const scale = newChar.scale || 1;
+    newChar.wrapper.style.transform = `translate(${newChar._posX}px, ${newChar._posY}px) scale(${scale})`;
+
+    newChar.visible = data.visible !== false;
+    newChar.wrapper.style.display = newChar.visible ? "block" : "none";
+
+    selectCharacter(newChar.id);
+    renderCharactersList();
+  }
+
+  const existingContextMenu = document.getElementById("characterContextMenu");
+  const characterContextMenu = existingContextMenu || document.createElement("div");
+  if (!existingContextMenu) {
+    characterContextMenu.id = "characterContextMenu";
+    characterContextMenu.innerHTML = `
+      <button type="button" data-action="copy">Copy</button>
+      <button type="button" data-action="paste">Paste</button>
+    `;
+    document.body.appendChild(characterContextMenu);
+    const copyBtn = characterContextMenu.querySelector('[data-action="copy"]');
+    const pasteBtn = characterContextMenu.querySelector('[data-action="paste"]');
+    if (copyBtn) copyBtn.textContent = t("copy");
+    if (pasteBtn) pasteBtn.textContent = t("paste");
+  }
+
+  function closeCharacterContextMenu() {
+    characterContextMenu.style.display = "none";
+    characterContextMenu.dataset.targetId = "";
+  }
+
+  function openCharacterContextMenu(x, y, targetId) {
+    lastContextMenuPosition = { x, y };
+    const copyBtn = characterContextMenu.querySelector('[data-action="copy"]');
+    const pasteBtn = characterContextMenu.querySelector('[data-action="paste"]');
+    if (copyBtn) copyBtn.style.display = targetId ? "block" : "none";
+    if (pasteBtn)
+      pasteBtn.style.display = characterClipboard ? "block" : "none";
+
+    if (!targetId && !characterClipboard) return;
+
+    characterContextMenu.dataset.targetId = targetId || "";
+    characterContextMenu.style.display = "block";
+
+    const menuWidth = characterContextMenu.offsetWidth || 160;
+    const menuHeight = characterContextMenu.offsetHeight || 80;
+    const maxX = window.innerWidth - menuWidth - 8;
+    const maxY = window.innerHeight - menuHeight - 8;
+    const clampedX = Math.max(8, Math.min(x, maxX));
+    const clampedY = Math.max(8, Math.min(y, maxY));
+    characterContextMenu.style.left = `${clampedX}px`;
+    characterContextMenu.style.top = `${clampedY}px`;
+  }
+
+  characterContextMenu.addEventListener("click", e => {
+    const action = e.target?.dataset?.action;
+    if (!action) return;
+    if (action === "copy") {
+      const id = characterContextMenu.dataset.targetId;
+      const c = characters.find(ch => ch.id === id);
+      characterClipboard = buildCharacterCopyData(c);
+    }
+    if (action === "paste") pasteCharacterFromClipboard();
+    closeCharacterContextMenu();
+  });
+
+  document.addEventListener("click", () => closeCharacterContextMenu());
+  document.addEventListener("keydown", e => {
+    if (e.key === "Escape") closeCharacterContextMenu();
+  });
+
+  const charactersListEl = document.getElementById("charactersList");
+  if (charactersListEl) {
+    charactersListEl.addEventListener("contextmenu", e => {
+      const item = e.target.closest(".characterItem");
+      if (!item && !characterClipboard) return;
+      e.preventDefault();
+      openCharacterContextMenu(e.clientX, e.clientY, item?.dataset?.id || "");
+    });
+  }
+
+  if (renderArea) {
+    renderArea.addEventListener("contextmenu", e => {
+      if (e.target.closest(".charViewport")) return;
+      if (!characterClipboard) return;
+      e.preventDefault();
+      openCharacterContextMenu(e.clientX, e.clientY, "");
+    });
   }
 
   function createCharacter(name = `Character ${characters.length + 1}`, skin = STEVE_SKIN) {
@@ -488,8 +1069,8 @@ export function initApp() {
     const resizeViewportBtn = document.createElement("button");
     resizeViewportBtn.className = "resizeViewportBtn";
     resizeViewportBtn.textContent = "";
-    resizeViewportBtn.title = "Resize";
-    resizeViewportBtn.setAttribute("aria-label", "Resize");
+    resizeViewportBtn.title = t("resize");
+    resizeViewportBtn.setAttribute("aria-label", t("resize"));
     const aspectRatio = baseWidth / baseHeight; // Keep aspect ratio
 
     resizeViewportBtn.addEventListener("pointerdown", e => {
@@ -512,8 +1093,8 @@ export function initApp() {
     // Add move button to viewport (next to resize)
     const moveViewportBtn = document.createElement("button");
     moveViewportBtn.className = "moveViewportBtn";
-    moveViewportBtn.title = "Move";
-    moveViewportBtn.setAttribute("aria-label", "Move");
+    moveViewportBtn.title = t("move");
+    moveViewportBtn.setAttribute("aria-label", t("move"));
     moveViewportBtn.innerHTML =
       '<svg viewBox="0 0 24 24" aria-hidden="true"><path d="M12 2l3 3h-2v4h-2V5H9l3-3zm0 20l-3-3h2v-4h2v4h2l-3 3zm10-10l-3 3v-2h-4v-2h4V9l3 3zM2 12l3-3v2h4v2H5v2l-3-3z" /></svg>';
     wrapper.appendChild(moveViewportBtn);
@@ -605,6 +1186,12 @@ export function initApp() {
       if (selectedCharacterId !== c.id) {
         selectCharacter(c.id);
       }
+    });
+
+    wrapper.addEventListener("contextmenu", e => {
+      e.preventDefault();
+      e.stopPropagation();
+      openCharacterContextMenu(e.clientX, e.clientY, c.id);
     });
 
     // pointerdown on wrapper to start dragging when this character is movable
@@ -720,7 +1307,15 @@ export function initApp() {
         s.value = 0;
         s.dispatchEvent(new Event("input"));
       });
+
+      document.querySelectorAll(".skinPreview").forEach(el => {
+        el.classList.remove("active");
+      });
+      if (loadSteveBtn) loadSteveBtn.classList.remove("active");
+      if (loadAlexBtn) loadAlexBtn.classList.remove("active");
     }
+
+    updateHeadUsage();
 
     // selection: bring selected to front, enable its controls, disable others
     characters.forEach(ch => {
@@ -763,7 +1358,7 @@ export function initApp() {
     addCharacterBtn.onclick = async () => {
       const defaultName = `Character ${characters.length + 1}`;
       const name = await openModal({
-        message: "Name your character",
+        message: t("nameCharacter"),
         inputPlaceholder: defaultName,
         showInput: true,
         maxLength: 24
@@ -774,7 +1369,7 @@ export function initApp() {
       );
       if (exists) {
         await openModal({
-          message: "Character name already used.",
+          message: t("characterNameUsed"),
           showInput: false,
           showCancel: false
         });
@@ -1198,8 +1793,8 @@ export function initApp() {
     savePoseBtn.onclick = async () => {
       const POSE_NAME_MAX = 24;
       const name = await openModal({
-        message: "Name your pose",
-        inputPlaceholder: "My pose",
+        message: t("namePose"),
+        inputPlaceholder: t("posePlaceholder"),
         showInput: true,
         maxLength: POSE_NAME_MAX
       });
@@ -1215,7 +1810,7 @@ export function initApp() {
       }
       if (poseDB[cleanName]) {
         await openModal({
-          message: "Pose already exists.",
+          message: t("poseExists"),
           showInput: false,
           showCancel: false
         });
@@ -1229,7 +1824,7 @@ export function initApp() {
       };
       localStorage.setItem("poses", JSON.stringify(poseDB));
       await openModal({
-        message: "Pose saved successfully.",
+        message: t("poseSaved"),
         showInput: false,
         showCancel: false
       });
@@ -1240,7 +1835,7 @@ export function initApp() {
     loadPoseBtn.onclick = () => {
       if (!poseDB || Object.keys(poseDB).length === 0) {
         openModal({
-          message: "No poses saved yet.",
+          message: t("noPoses"),
           showInput: false,
           showCancel: false
         });
@@ -1316,12 +1911,12 @@ export function initApp() {
 
       const applyBtn = document.createElement("button");
       applyBtn.className = "btnSecondary";
-      applyBtn.textContent = "Apply";
+      applyBtn.textContent = t("apply");
       applyBtn.onclick = () => applyPose(pose);
 
       const delBtn = document.createElement("button");
       delBtn.className = "btnGhost";
-      delBtn.textContent = "Delete";
+      delBtn.textContent = t("delete");
       delBtn.onclick = () => {
         delete poseDB[name];
         localStorage.setItem("poses", JSON.stringify(poseDB));
@@ -1508,7 +2103,7 @@ export function initApp() {
   function setMoveMode(sel, enabled) {
     const target = sel || getSelectedCharacter();
     if (!target) {
-      alert("Select a character first");
+      alert(t("selectCharacterFirst"));
       return;
     }
     target.moveEnabled = enabled;

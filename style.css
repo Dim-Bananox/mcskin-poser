@@ -22,11 +22,21 @@ body {
     color: white;
     font-family: "Space Grotesk", "Segoe UI", sans-serif;
     margin: 0;
+    overflow: hidden;
 }
 
 body.light {
     background: #f8fafc;
     color: #0f172a;
+}
+
+body.light .appTitle {
+    color: #0f172a;
+    text-shadow:
+        0 2px 0 #d1d5db,
+        2px 2px 0 #e5e7eb,
+        -2px 2px 0 #e5e7eb,
+        0 12px 20px rgba(15, 23, 42, 0.15);
 }
 
 
@@ -61,6 +71,11 @@ body.light {
     gap: 8px;
     overflow-y: auto;
     overflow-x: hidden;
+}
+
+.panel-left {
+    align-self: flex-start;
+    max-height: calc(100vh - 160px);
 }
 
 .panel-right {
@@ -208,21 +223,40 @@ body.light .btnGhost {
 }
 
 body.light .panel-left {
-    box-shadow: inset 4px 0 0 rgba(168, 85, 247, 0.3);
+    background: linear-gradient(160deg, rgba(168, 85, 247, 0.18), rgba(255, 255, 255, 0.94));
+    border-color: rgba(168, 85, 247, 0.35);
+    box-shadow: inset 4px 0 0 rgba(168, 85, 247, 0.35), 0 12px 26px rgba(15, 23, 42, 0.08);
 }
 
 body.light .panel-right {
-    box-shadow: inset -4px 0 0 rgba(249, 115, 22, 0.3);
+    background: linear-gradient(160deg, rgba(249, 115, 22, 0.2), rgba(255, 255, 255, 0.94));
+    border-color: rgba(249, 115, 22, 0.35);
+    box-shadow: inset -4px 0 0 rgba(249, 115, 22, 0.35), 0 12px 26px rgba(15, 23, 42, 0.08);
 }
 
 body.light .panel-bg {
-    box-shadow: inset -4px 0 0 rgba(56, 189, 248, 0.25);
+    background: linear-gradient(160deg, rgba(56, 189, 248, 0.22), rgba(255, 255, 255, 0.94));
+    border-color: rgba(56, 189, 248, 0.35);
+    box-shadow: inset -4px 0 0 rgba(56, 189, 248, 0.35), 0 12px 26px rgba(15, 23, 42, 0.08);
 }
 
 
 body.light #renderArea {
     background: linear-gradient(145deg, #f8fafc, #e2e8f0);
     border-color: rgba(15, 23, 42, 0.2);
+}
+
+body.light input[type="range"] {
+    background: linear-gradient(90deg, rgba(15, 23, 42, 0.25), rgba(15, 23, 42, 0.12));
+    border: 1px solid rgba(15, 23, 42, 0.15);
+}
+
+body.light .toolbar input[type="range"] {
+    background: linear-gradient(90deg, rgba(15, 23, 42, 0.35), rgba(15, 23, 42, 0.15));
+}
+
+body.light .brushLabel {
+    color: rgba(15, 23, 42, 0.8);
 }
 
 body.light input[type="range"]::-webkit-slider-thumb {
@@ -260,6 +294,41 @@ body.light .skinPreview {
     transition: transform 0.2s ease, box-shadow 0.2s ease;
 }
 
+.languageToggle {
+    position: fixed;
+    top: 16px;
+    left: 12px;
+    z-index: 10001;
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    padding: 6px 10px;
+    border-radius: 6px;
+    background: #1e293b;
+    color: white;
+    border: 1px solid rgba(255, 255, 255, 0.2);
+    font-size: 12px;
+    font-weight: 700;
+    letter-spacing: 0.4px;
+    box-shadow: 0 8px 18px rgba(0, 0, 0, 0.35);
+}
+
+.languageToggle label {
+    font-size: 11px;
+    text-transform: uppercase;
+    letter-spacing: 0.6px;
+}
+
+.languageToggle select {
+    background: #0f172a;
+    color: white;
+    border: 1px solid rgba(255, 255, 255, 0.2);
+    border-radius: 6px;
+    padding: 4px 8px;
+    font-size: 12px;
+    font-weight: 600;
+}
+
 .themeToggle:hover {
     transform: translateY(-2px);
     box-shadow: 0 12px 22px rgba(0, 0, 0, 0.4);
@@ -269,6 +338,19 @@ body.light .themeToggle {
     background: #0f172a;
     color: white;
     border-color: rgba(15, 23, 42, 0.2);
+    position: fixed;
+}
+
+body.light .languageToggle {
+    background: #0f172a;
+    color: white;
+    border-color: rgba(15, 23, 42, 0.2);
+}
+
+body.light .languageToggle select {
+    background: #111827;
+    color: white;
+    border-color: rgba(255, 255, 255, 0.2);
 }
 
 .panel-left::-webkit-scrollbar,
@@ -324,6 +406,13 @@ body.light .panelSection--bg {
     background-repeat: no-repeat;
     background-position: center;
     cursor: pointer;
+}
+
+.skinBtn.used {
+    outline: 2px solid #3b82f6;
+    outline-offset: 2px;
+    border-radius: 8px;
+    box-shadow: 0 0 0 3px rgba(59, 130, 246, 0.25);
 }
 
 input[type=range] { width: 100%; }
@@ -501,6 +590,48 @@ button:active {
 
 .visibilityBtn { background: #16a34a; color: white; border: none; border-radius: 4px; padding: 2px 6px; cursor: pointer; font-size: 12px; margin-right: 5px; }
 .visibilityBtn:hover { background: #15803d; }
+
+#characterContextMenu {
+    position: fixed;
+    z-index: 10002;
+    background: #0b1220;
+    border: 1px solid rgba(255, 255, 255, 0.2);
+    border-radius: 8px;
+    padding: 6px;
+    min-width: 140px;
+    display: none;
+    box-shadow: 0 12px 24px rgba(0, 0, 0, 0.35);
+}
+
+#characterContextMenu button {
+    width: 100%;
+    background: transparent;
+    color: white;
+    border: none;
+    padding: 6px 10px;
+    text-align: left;
+    border-radius: 6px;
+}
+
+#characterContextMenu button:hover {
+    background: rgba(255, 255, 255, 0.08);
+    transform: none;
+    box-shadow: none;
+}
+
+body.light #characterContextMenu {
+    background: #ffffff;
+    border-color: rgba(15, 23, 42, 0.2);
+    box-shadow: 0 12px 24px rgba(15, 23, 42, 0.15);
+}
+
+body.light #characterContextMenu button {
+    color: #0f172a;
+}
+
+body.light #characterContextMenu button:hover {
+    background: #f1f5f9;
+}
 
 /* Character viewport in render area */
 .charViewport {
@@ -794,7 +925,7 @@ button:active {
     display: flex;
     justify-content: center;
     align-items: center;
-    max-width: 1100px;
+    max-width: 1200px;
     max-height: 800px;
     margin: 0 auto;
     box-shadow: 0 22px 50px rgba(0, 0, 0, 0.45);
