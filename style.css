@@ -1,4 +1,4 @@
-.topControls {
+﻿.topControls {
     position: fixed;
     top: 16px;
     right: 12px;
@@ -108,12 +108,14 @@ body.light .appLogo {
 .homeLayout {
     position: relative;
     min-height: 100vh;
+    height: 100vh;
     padding: 32px 7vw 40px;
     overflow-y: auto;
     display: flex;
     flex-direction: column;
     gap: 18px;
     z-index: 1;
+    box-sizing: border-box;
 }
 
 .homeBackdrop {
@@ -400,7 +402,7 @@ body.light .homeCard--live {
     display: flex;
     gap: 15px;
     padding: 15px;
-    height: calc(100vh - 70px);
+    height: calc(100vh - 170px);
     box-sizing: border-box;
 }
 
@@ -954,6 +956,34 @@ button:active {
     box-shadow: none;
 }
 
+#objectContextMenu {
+    position: fixed;
+    z-index: 10002;
+    background: #0b1220;
+    border: 1px solid rgba(255, 255, 255, 0.2);
+    border-radius: 8px;
+    padding: 6px;
+    min-width: 160px;
+    display: none;
+    box-shadow: 0 12px 24px rgba(0, 0, 0, 0.35);
+}
+
+#objectContextMenu button {
+    width: 100%;
+    background: transparent;
+    color: white;
+    border: none;
+    padding: 6px 10px;
+    text-align: left;
+    border-radius: 6px;
+}
+
+#objectContextMenu button:hover {
+    background: rgba(255, 255, 255, 0.08);
+    transform: none;
+    box-shadow: none;
+}
+
 body.light #characterContextMenu {
     background: #ffffff;
     border-color: rgba(15, 23, 42, 0.2);
@@ -965,6 +995,20 @@ body.light #characterContextMenu button {
 }
 
 body.light #characterContextMenu button:hover {
+    background: #f1f5f9;
+}
+
+body.light #objectContextMenu {
+    background: #ffffff;
+    border-color: rgba(15, 23, 42, 0.2);
+    box-shadow: 0 12px 24px rgba(15, 23, 42, 0.15);
+}
+
+body.light #objectContextMenu button {
+    color: #0f172a;
+}
+
+body.light #objectContextMenu button:hover {
     background: #f1f5f9;
 }
 
@@ -1062,6 +1106,82 @@ body.light #characterContextMenu button:hover {
 .charViewport.resizing {
     border-color: #22c55e;
     box-shadow: 0 0 6px rgba(34,197,94,0.25);
+}
+
+/* Layers List Styles */
+#layersList {
+    width: 100%;
+    display: flex;
+    flex-direction: column;
+    gap: 6px;
+    padding: 4px 0;
+}
+
+.layerItem {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    padding: 8px 10px;
+    background: rgba(30, 41, 59, 0.6);
+    border: 1px solid rgba(255, 255, 255, 0.06);
+    border-radius: 6px;
+    color: rgba(255, 255, 255, 0.9);
+    font-size: 13px;
+    transition: all 0.2s ease;
+    cursor: default;
+    user-select: none;
+}
+
+.layerItem:hover {
+    background: rgba(30, 41, 59, 0.85);
+    transform: translateX(2px);
+}
+
+.layerItem.active {
+    background: rgba(59, 130, 246, 0.15);
+    border-color: rgba(59, 130, 246, 0.5);
+}
+
+.layerItem.characterLayer { border-left: 3px solid #3b82f6; }
+.layerItem.objectLayer { border-left: 3px solid #f97316; }
+
+.layerVisBtn, .layerOrderBtn, .layerDelBtn {
+    background: transparent;
+    border: none;
+    cursor: pointer;
+    color: rgba(255, 255, 255, 0.5);
+    padding: 4px;
+    border-radius: 4px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    transition: all 0.2s;
+}
+
+.layerVisBtn:hover, .layerOrderBtn:hover {
+    background: rgba(255, 255, 255, 0.1);
+    color: white;
+}
+
+.layerDelBtn:hover {
+    background: rgba(239, 68, 68, 0.2);
+    color: #ef4444;
+}
+
+.layerLabel {
+    flex: 1;
+    font-weight: 500;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    white-space: nowrap;
+}
+
+/* Dragging visual */
+.layerItem[draggable="true"] {
+    cursor: grab;
+}
+.layerItem[draggable="true"]:active {
+    cursor: grabbing;
 }
 
 .skinPreview {
@@ -1395,6 +1515,15 @@ body.light #characterContextMenu button:hover {
     background: #f8fafc;
     border: 1px solid #cbd5f5;
 }
+.toolbar .toolBtn--wide {
+    width: auto;
+    min-width: 96px;
+    padding: 0 10px;
+    font-size: 12px;
+    font-weight: 600;
+    text-transform: uppercase;
+    letter-spacing: 0.5px;
+}
 
 .toolbar .toolBtn--line {
     width: 36px;
@@ -1512,6 +1641,10 @@ body.light #characterContextMenu button:hover {
 #drawCanvas {
     position: absolute;
     top: 0;
+#clearLayersBtn {
+    align-self: flex-start;
+    margin-bottom: 6px;
+}
     left: 0;
     width: 100%;
     height: 100%;
@@ -1529,3 +1662,22 @@ body.light #characterContextMenu button:hover {
     box-shadow: 0 0 8px rgba(0, 102, 255, 0.35);
 }
 
+.layerItem.drop-target-top {
+    border-top-color: #22c55e !important;
+    border-top-width: 3px !important;
+}
+
+.layerItem.drop-target-bottom {
+    border-bottom-color: #22c55e !important;
+    border-bottom-width: 3px !important;
+}
+
+.layerRenameInput {
+    background: #1e293b;
+    border: 1px solid #3b82f6;
+    color: white;
+    border-radius: 4px;
+    padding: 2px 4px;
+    font-size: 12px;
+    font-family: inherit;
+}

@@ -187,7 +187,7 @@ export default function App() {
         </button>
         <button
           id="textBtn"
-          className="toolBtn toolBtn--text"
+          className="toolBtn"
           aria-label="Text"
           title="Text"
           data-i18n-aria="toolText"
@@ -261,6 +261,14 @@ export default function App() {
           <img src="/icons/delete_all_button.png" alt="" className="toolIcon" />
         </button>
         <div className="toolbarSpacer"></div>
+        <button
+          id="addCharacter"
+          className="toolBtn toolBtn--wide"
+          title="Add Character"
+          data-i18n-title="addCharacter"
+        >
+          <span data-i18n="addCharacter">Add Character</span>
+        </button>
         <button id="exportBtn" className="btnPrimary exportToolbar">
           <svg
             className="btnIcon"
@@ -318,11 +326,11 @@ export default function App() {
           </div>
 
           <div className="panelSection">
-            <h3 data-i18n="myCharacter">My Character</h3>
-            <button id="addCharacter" className="btnPrimary" data-i18n="addCharacter">
-              Add Character
+            <h3 data-i18n="layers">Layers</h3>
+            <button id="clearLayersBtn" className="btnGhost" data-i18n="clearLayers">
+              Clear Layers
             </button>
-            <div id="charactersList" className="charactersList"></div>
+            <div id="layersList" className="layersList"></div>
           </div>
         </div>
 

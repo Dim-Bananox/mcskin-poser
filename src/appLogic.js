@@ -34,7 +34,7 @@ export function initApp() {
   if (bgTransparent) bgTransparent.classList.toggle("active", true);
   const removeBgBtn = document.getElementById("removeBgBtn");
 
-
+  const selectBtn = document.getElementById("selectBtn");
   const penBtn = document.getElementById("penBtn");
   const lineBtn = document.getElementById("lineBtn");
   const eraserBtn = document.getElementById("eraserBtn");
@@ -80,16 +80,32 @@ export function initApp() {
   let currentColor = "#000000";
   let textMode = false;
   let activeTextEditor = null;
+  let isCommittingText = false;
+  let selectMode = false;
+  let isExporting = false;
+
+  // Object drawing state
+  let drawObjects = [];
+  let selectedObjectId = null;
+  let activeDrawObject = null;
+  let isTransforming = false;
+  let transformData = null;
 
   // Shape state
   let shapeMode = false;
   let shapeType = "line"; // 'line', 'rect', 'circle'
   let shapeStart = null;
-  let shapeBaseImage = null;
-  let shapeLastCoords = null;
 
-  let characterClipboard = null;
+  let sceneClipboard = null;
   let lastContextMenuPosition = null;
+  let layerOrderCounter = 1;
+
+  const ensureLayerOrder = obj => {
+    if (!obj) return;
+    if (typeof obj._layerOrderIndex !== "number") {
+      obj._layerOrderIndex = layerOrderCounter++;
+    }
+  };
 
   // Initialize pen as active
   let penInitialized = false;
@@ -105,6 +121,7 @@ export function initApp() {
       lightMode: "Light Mode",
       darkMode: "Dark Mode",
       toolPen: "Pen",
+      toolSelect: "Select",
       toolLine: "Line",
       toolEraser: "Eraser",
       toolText: "Text",
@@ -120,7 +137,9 @@ export function initApp() {
       savePose: "Save Pose",
       loadPose: "Load Pose",
       myCharacter: "My Character",
+      layers: "Layers",
       addCharacter: "Add Character",
+      clearLayers: "Clear Layers",
       background: "Background",
       transparent: "Transparent",
       uploadImage: "Upload Image",
@@ -160,7 +179,10 @@ export function initApp() {
       shapeRectangle: "Rectangle",
       shapeCircle: "Circle",
       shapeTriangle: "Triangle",
-      textPlaceholder: "Your text"
+      textPlaceholder: "Your text",
+      objectBringForward: "Bring Forward",
+      objectSendBackward: "Send Backward",
+      objectDelete: "Delete Object"
     },
     fr: {
       appTitle: "Createur de Scene",
@@ -169,6 +191,7 @@ export function initApp() {
       lightMode: "Mode Clair",
       darkMode: "Mode Sombre",
       toolPen: "Stylo",
+      toolSelect: "Selection",
       toolLine: "Ligne",
       toolEraser: "Gomme",
       toolText: "Texte",
@@ -184,7 +207,9 @@ export function initApp() {
       savePose: "Sauver la pose",
       loadPose: "Charger la pose",
       myCharacter: "Mon personnage",
+      layers: "Calques",
       addCharacter: "Ajouter un personnage",
+      clearLayers: "Effacer les calques",
       background: "Arriere-plan",
       transparent: "Transparent",
       uploadImage: "Importer une image",
@@ -224,7 +249,10 @@ export function initApp() {
       shapeRectangle: "Rectangle",
       shapeCircle: "Cercle",
       shapeTriangle: "Triangle",
-      textPlaceholder: "Votre texte"
+      textPlaceholder: "Votre texte",
+      objectBringForward: "Mettre devant",
+      objectSendBackward: "Mettre derriere",
+      objectDelete: "Supprimer l'objet"
     },
     es: {
       appTitle: "Creador de Escenas",
@@ -233,6 +261,7 @@ export function initApp() {
       lightMode: "Modo Claro",
       darkMode: "Modo Oscuro",
       toolPen: "Lapiz",
+      toolSelect: "Seleccionar",
       toolLine: "Linea",
       toolEraser: "Borrador",
       toolText: "Texto",
@@ -248,7 +277,9 @@ export function initApp() {
       savePose: "Guardar pose",
       loadPose: "Cargar pose",
       myCharacter: "Mi personaje",
+      layers: "Capas",
       addCharacter: "Agregar personaje",
+      clearLayers: "Borrar capas",
       background: "Fondo",
       transparent: "Transparente",
       uploadImage: "Subir imagen",
@@ -288,7 +319,10 @@ export function initApp() {
       shapeRectangle: "Rectangulo",
       shapeCircle: "Circulo",
       shapeTriangle: "Triangulo",
-      textPlaceholder: "Tu texto"
+      textPlaceholder: "Tu texto",
+      objectBringForward: "Traer al frente",
+      objectSendBackward: "Enviar atras",
+      objectDelete: "Eliminar objeto"
     },
     de: {
       appTitle: "Szenenersteller",
@@ -297,6 +331,7 @@ export function initApp() {
       lightMode: "Heller Modus",
       darkMode: "Dunkler Modus",
       toolPen: "Stift",
+      toolSelect: "Auswaehlen",
       toolLine: "Linie",
       toolEraser: "Radierer",
       toolText: "Text",
@@ -312,7 +347,9 @@ export function initApp() {
       savePose: "Pose speichern",
       loadPose: "Pose laden",
       myCharacter: "Mein Charakter",
+      layers: "Ebenen",
       addCharacter: "Charakter hinzufuegen",
+      clearLayers: "Ebenen loeschen",
       background: "Hintergrund",
       transparent: "Transparent",
       uploadImage: "Bild hochladen",
@@ -352,7 +389,10 @@ export function initApp() {
       shapeRectangle: "Rechteck",
       shapeCircle: "Kreis",
       shapeTriangle: "Dreieck",
-      textPlaceholder: "Dein Text"
+      textPlaceholder: "Dein Text",
+      objectBringForward: "Nach vorne",
+      objectSendBackward: "Nach hinten",
+      objectDelete: "Objekt loeschen"
     },
     it: {
       appTitle: "Creatore di Scene",
@@ -361,6 +401,7 @@ export function initApp() {
       lightMode: "Modalita Chiara",
       darkMode: "Modalita Scura",
       toolPen: "Penna",
+      toolSelect: "Seleziona",
       toolLine: "Linea",
       toolEraser: "Gomma",
       toolText: "Testo",
@@ -376,7 +417,9 @@ export function initApp() {
       savePose: "Salva posa",
       loadPose: "Carica posa",
       myCharacter: "Il mio personaggio",
+      layers: "Livelli",
       addCharacter: "Aggiungi personaggio",
+      clearLayers: "Pulisci livelli",
       background: "Sfondo",
       transparent: "Trasparente",
       uploadImage: "Carica immagine",
@@ -416,13 +459,17 @@ export function initApp() {
       shapeRectangle: "Rettangolo",
       shapeCircle: "Cerchio",
       shapeTriangle: "Triangolo",
-      textPlaceholder: "Il tuo testo"
+      textPlaceholder: "Il tuo testo",
+      objectBringForward: "Porta avanti",
+      objectSendBackward: "Porta indietro",
+      objectDelete: "Elimina oggetto"
     }
   };
 
   let currentLanguage = localStorage.getItem("language") || "en";
 
   const t = key => translations[currentLanguage]?.[key] || translations.en[key] || key;
+  let refreshObjectMenuLabels = () => {};
 
   const updateThemeLabel = () => {
     if (!themeToggle) return;
@@ -465,6 +512,8 @@ export function initApp() {
       if (pasteBtn) pasteBtn.textContent = t("paste");
     }
 
+    refreshObjectMenuLabels();
+
     document.querySelectorAll(".resizeViewportBtn").forEach(btn => {
       btn.title = t("resize");
       btn.setAttribute("aria-label", t("resize"));
@@ -475,7 +524,7 @@ export function initApp() {
     });
 
     updateThemeLabel();
-    renderCharactersList();
+    renderLayersList();
     renderGallery();
   };
 
@@ -843,53 +892,406 @@ export function initApp() {
     return characters.find(c => c.id === selectedCharacterId) || null;
   }
 
-  function renderCharactersList() {
-    const list = document.getElementById("charactersList");
+  function renderLayersList() {
+    const list = document.getElementById("layersList");
     if (!list) return;
     list.innerHTML = "";
-    characters.forEach(c => {
+
+    const getObjectLabel = obj => {
+      if (obj.name) return obj.name; // Use custom name if set
+      const idx = typeof obj._layerOrderIndex === "number" ? obj._layerOrderIndex : "";
+      if (obj.type === "text") {
+        const text = obj.text || "";
+        const preview = text.length > 8 ? `${text.slice(0, 8)}...` : text;
+        return `Text ${idx}: ${preview || "Text"}`;
+      }
+      if (obj.type === "stroke" || obj.originType === "stroke") return `Stroke ${idx}`;
+      if (obj.type === "shape") return `${obj.shapeType || "Shape"} ${idx}`;
+      return `Shape ${idx}`;
+    };
+
+    const reorderInList = (type, fromId, toId, visualPosition) => {
+      const arr = type === "character" ? characters : drawObjects;
+      const listOrder = arr.slice().reverse();
+      const fromListIdx = listOrder.findIndex(item => item.id === fromId);
+      const toListIdx = listOrder.findIndex(item => item.id === toId);
+      if (fromListIdx < 0 || toListIdx < 0) return;
+
+      // "visualPosition" is relative to the TARGET item (toId) in list order (Top=0)
+      // If "above", we want to insert at toListIdx.
+      // If "below", we want to insert at toListIdx + 1.
+      
+      let targetListIdx = toListIdx;
+      if (visualPosition === "below") targetListIdx += 1;
+
+      // Now convert everything to array indices (Bottom=0)
+      // item at visual index i corresponds to array index (len - 1 - i)
+      
+      let fromArrIdx = arr.length - 1 - fromListIdx;
+      
+      // Calculate where we want to insert in array terms.
+      // Inserting at visual index K means the new item will be the Kth item from top.
+      // In array terms, it will be at index (len - 1 - K).
+      // However, splicing logic is tricky. 
+      
+      // Let's simplify: Remove the item first.
+      const [moved] = arr.splice(fromArrIdx, 1);
+      
+      // Now the array is shorter by 1.
+      // We need to find the array index of the "target slot".
+      // Let's re-calculate toListIdx based on the *original* list for reference? 
+      // No, let's use the ID.
+      
+      const newArr = arr;
+      // Find the index of the target object in the modified array
+      let newToListIdx = newArr.findIndex(item => item.id === toId);
+      
+      // visualPosition "above" (visual top) means AFTER in array (higher Z)
+      // visualPosition "below" (visual bottom) means BEFORE in array (lower Z)
+      
+      // If "above" (Top): we want to insert at newToListIdx + 1 (so it becomes higher Z than target)
+      // If "below" (Bottom): we want to insert at newToListIdx (so it becomes lower Z, pushing target up)
+
+      let insertIdx = newToListIdx;
+      if (visualPosition === "above") insertIdx = newToListIdx + 1;
+      
+      arr.splice(insertIdx, 0, moved);
+
+      if (type === "character") {
+        const ref = moved.wrapper?.parentNode || null;
+        // Re-append wrappers in order
+        if (ref) arr.forEach(ch => { if (ch.wrapper) ref.appendChild(ch.wrapper); });
+      }
+      renderObjects();
+      renderLayersList();
+    };
+
+    list.ondragover = e => {
+      e.preventDefault();
+      e.dataTransfer.dropEffect = "move";
+    };
+    list.ondrop = e => {
+      e.preventDefault();
+      // Use the drop handler on items instead
+    };
+
+    // List Logic Removed
+
+
+    // 1. Characters (Top visual layer, DOM elements)
+    // Iterate reverse (Top first)
+    characters.slice().reverse().forEach(c => {
       const item = document.createElement("div");
-      item.className = "characterItem";
-
-      const nameSpan = document.createElement("span");
-      nameSpan.textContent = c.name;
-      nameSpan.onclick = () => selectCharacter(c.id);
-
-      const visibilityBtn = document.createElement("button");
-      visibilityBtn.className = "visibilityBtn";
-      visibilityBtn.textContent = c.visible ? t("hide") : t("show");
-      visibilityBtn.onclick = e => {
-        e.stopPropagation();
-        c.visible = !c.visible;
-        visibilityBtn.textContent = c.visible ? t("hide") : t("show");
-        if (c.wrapper) c.wrapper.style.display = c.visible ? "block" : "none";
-      };
-
-      const deleteBtn = document.createElement("button");
-      deleteBtn.className = "deleteBtn";
-      deleteBtn.textContent = "X";
-      deleteBtn.onclick = e => {
-        e.stopPropagation();
-        // Remove character viewport from render area
-        const charViewport = document.querySelector(`.charViewport[data-id="${c.id}"]`);
-        if (charViewport) charViewport.remove();
-        // Remove from characters array
-        characters = characters.filter(ch => ch.id !== c.id);
-        // Select another character if current is deleted
-        if (selectedCharacterId === c.id) {
-          if (characters.length > 0) selectCharacter(characters[0].id);
-          else selectedCharacterId = null;
-        }
-        renderCharactersList();
-      };
-
-      item.dataset.id = c.id;
-      item.appendChild(visibilityBtn);
-      item.appendChild(nameSpan);
-      item.appendChild(deleteBtn);
+      item.className = "layerItem characterLayer";
+      item.dataset.layerType = "character";
+      item.dataset.layerId = c.id;
       if (c.id === selectedCharacterId) item.classList.add("active");
+      item.draggable = true;
+      item.setAttribute("draggable", "true");
+
+      const visBtn = document.createElement("button");
+      visBtn.className = "layerVisBtn";
+      visBtn.innerHTML = c.visible !== false ? "👁️" : "🚫";
+      visBtn.onclick = e => {
+        e.stopPropagation();
+        c.visible = c.visible === false; 
+        if (c.wrapper) c.wrapper.style.display = c.visible !== false ? "block" : "none";
+        renderLayersList();
+      };
+      
+      const label = document.createElement("span");
+      label.className = "layerLabel";
+      label.textContent = c.name;
+      label.onclick = () => {
+         selectCharacter(c.id); 
+         renderLayersList();
+      };
+      
+      label.ondblclick = e => {
+        e.stopPropagation();
+        const input = document.createElement("input");
+        input.type = "text";
+        input.value = c.name;
+        input.className = "layerRenameInput";
+        input.style.width = "100%";
+        
+        const save = () => {
+             const newName = input.value.trim();
+             if (newName) {
+                 c.name = newName;
+                 renderLayersList();
+             } else {
+                 label.textContent = c.name; // Revert
+             }
+             if (selectedCharacterId === c.id) {
+                 const nameDisplay = document.getElementById("characterName");
+                 if (nameDisplay) nameDisplay.textContent = c.name;
+             }
+        };
+
+        input.onblur = save;
+        input.onkeydown = k => {
+            if (k.key === "Enter") {
+                input.blur();
+            }
+        };
+        
+        label.textContent = "";
+        label.appendChild(input);
+        input.focus();
+      };
+
+        item.oncontextmenu = e => {
+        e.preventDefault();
+        selectCharacter(c.id);
+          openCharacterContextMenu(e.clientX, e.clientY, c.id);
+      };
+
+      const upBtn = document.createElement("button");
+      upBtn.className = "layerOrderBtn";
+      upBtn.innerHTML = "▲";
+      upBtn.onclick = e => {
+        e.stopPropagation();
+        const idx = characters.indexOf(c);
+        if (idx < characters.length - 1) {
+          [characters[idx], characters[idx+1]] = [characters[idx+1], characters[idx]];
+          if (c.wrapper && c.wrapper.parentNode) {
+            const p = c.wrapper.parentNode;
+            characters.forEach(ch => { if (ch.wrapper && ch.wrapper.parentNode === p) p.appendChild(ch.wrapper); });
+          }
+          renderLayersList();
+        }
+      };
+
+      const downBtn = document.createElement("button");
+      downBtn.className = "layerOrderBtn";
+      downBtn.innerHTML = "▼";
+      downBtn.onclick = e => {
+         e.stopPropagation();
+         const idx = characters.indexOf(c);
+         if (idx > 0) {
+           [characters[idx], characters[idx-1]] = [characters[idx-1], characters[idx]];
+           if (c.wrapper && c.wrapper.parentNode) {
+            const p = c.wrapper.parentNode;
+            characters.forEach(ch => { if (ch.wrapper && ch.wrapper.parentNode === p) p.appendChild(ch.wrapper); });
+           }
+           renderLayersList();
+         }
+      };
+      
+      const delBtn = document.createElement("button");
+      delBtn.className = "layerDelBtn";
+      delBtn.textContent = "✕";
+      delBtn.onclick = e => {
+        e.stopPropagation();
+        if (c.wrapper) c.wrapper.remove();
+        characters = characters.filter(ch => ch.id !== c.id);
+        if (selectedCharacterId === c.id) selectCharacter(null);
+        renderLayersList();
+      };
+
+      // Simple Drag
+      item.ondragstart = e => {
+        e.dataTransfer.effectAllowed = "move";
+        const payload = JSON.stringify({type:"character", id: c.id});
+        e.dataTransfer.setData("text/plain", payload);
+        e.dataTransfer.setData("text", payload);
+      };
+      
+      item.ondragover = e => {
+        e.preventDefault();
+        e.stopPropagation();
+        e.dataTransfer.dropEffect = "move";
+        const rect = item.getBoundingClientRect();
+        const relY = e.clientY - rect.top;
+        if (relY < rect.height / 2) {
+          item.classList.add("drop-target-top");
+          item.classList.remove("drop-target-bottom");
+        } else {
+          item.classList.add("drop-target-bottom");
+          item.classList.remove("drop-target-top");
+        }
+      };
+      
+      item.ondragleave = () => {
+        item.classList.remove("drop-target-top", "drop-target-bottom");
+      };
+
+      item.ondrop = e => {
+        e.preventDefault();
+        e.stopPropagation();
+        const position = item.classList.contains("drop-target-top") ? "above" : "below";
+        item.classList.remove("drop-target-top", "drop-target-bottom");
+        
+        try {
+          const raw = e.dataTransfer.getData("text/plain") || e.dataTransfer.getData("text");
+          const d = JSON.parse(raw);
+          if (d.type === "character" && d.id) {
+             reorderInList("character", d.id, c.id, position);
+          }
+        } catch(err) {}
+      };
+
+      item.appendChild(visBtn);
+      item.appendChild(label);
+      item.appendChild(upBtn);
+      item.appendChild(downBtn);
+      item.appendChild(delBtn);
+      item.querySelectorAll("button, span").forEach(el => el.setAttribute("draggable", "false"));
       list.appendChild(item);
     });
+
+    // 2. Objects
+    drawObjects.slice().reverse().forEach(obj => {
+        const item = document.createElement("div");
+        item.className = "layerItem objectLayer";
+      item.dataset.layerType = "object";
+      item.dataset.layerId = obj.id;
+        if (obj.id === selectedObjectId) item.classList.add("active");
+        item.draggable = true;
+        item.setAttribute("draggable", "true");
+
+        const visBtn = document.createElement("button");
+        visBtn.className = "layerVisBtn";
+        visBtn.innerHTML = obj.visible !== false ? "👁️" : "🚫";
+        visBtn.onclick = e => {
+          e.stopPropagation();
+          obj.visible = obj.visible === false;
+          renderObjects();
+          renderLayersList();
+        };
+        
+        const label = document.createElement("span");
+        label.className = "layerLabel";
+        label.textContent = getObjectLabel(obj);
+        label.onclick = () => { selectObject(obj.id); renderLayersList(); };
+
+        label.ondblclick = e => {
+            e.stopPropagation();
+            const currentName = obj.name || getObjectLabel(obj);
+            const input = document.createElement("input");
+            input.type = "text";
+            input.value = currentName;
+            input.className = "layerRenameInput";
+            input.style.width = "100%";
+            
+            const save = () => {
+                 const newName = input.value.trim();
+                 if (newName) {
+                     obj.name = newName;
+                     renderLayersList();
+                     saveSceneObjects();
+                 } else {
+                     label.textContent = getObjectLabel(obj); 
+                 }
+            };
+    
+            input.onblur = save;
+            input.onkeydown = k => {
+                if (k.key === "Enter") {
+                    input.blur();
+                }
+            };
+            
+            label.textContent = "";
+            label.appendChild(input);
+            input.focus();
+        };
+
+        item.oncontextmenu = e => {
+          e.preventDefault();
+          selectObject(obj.id);
+          openObjectContextMenu(e.clientX, e.clientY);
+        };
+        
+        const upBtn = document.createElement("button");
+        upBtn.className = "layerOrderBtn";
+        upBtn.innerHTML = "▲";
+        upBtn.onclick = e => {
+          e.stopPropagation();
+          const idx = drawObjects.indexOf(obj);
+          if (idx < drawObjects.length - 1) {
+            [drawObjects[idx], drawObjects[idx+1]] = [drawObjects[idx+1], drawObjects[idx]];
+            renderObjects();
+            renderLayersList();
+          }
+        };
+
+        const downBtn = document.createElement("button");
+        downBtn.className = "layerOrderBtn";
+        downBtn.innerHTML = "▼";
+        downBtn.onclick = e => {
+           e.stopPropagation();
+           const idx = drawObjects.indexOf(obj);
+           if (idx > 0) {
+             [drawObjects[idx], drawObjects[idx-1]] = [drawObjects[idx-1], drawObjects[idx]];
+             renderObjects();
+             renderLayersList();
+           }
+        };
+        
+        const delBtn = document.createElement("button");
+        delBtn.className = "layerDelBtn";
+        delBtn.textContent = "✕";
+        delBtn.onclick = e => {
+           e.stopPropagation();
+           drawObjects = drawObjects.filter(x => x.id !== obj.id);
+           if (selectedObjectId === obj.id) selectObject(null);
+           renderObjects();
+           renderLayersList();
+        };
+
+        // Simple Drag
+        item.ondragstart = e => {
+          e.dataTransfer.effectAllowed = "move";
+          const payload = JSON.stringify({type:"object", id: obj.id});
+          e.dataTransfer.setData("text/plain", payload);
+          e.dataTransfer.setData("text", payload);
+        };
+        
+        item.ondragover = e => {
+            e.preventDefault();
+            e.stopPropagation();
+            e.dataTransfer.dropEffect = "move";
+            const rect = item.getBoundingClientRect();
+            const relY = e.clientY - rect.top;
+            if (relY < rect.height / 2) {
+              item.classList.add("drop-target-top");
+              item.classList.remove("drop-target-bottom");
+            } else {
+              item.classList.add("drop-target-bottom");
+              item.classList.remove("drop-target-top");
+            }
+        };
+        
+        item.ondragleave = () => {
+            item.classList.remove("drop-target-top", "drop-target-bottom");
+        };
+
+        item.ondrop = e => {
+            e.preventDefault();
+            e.stopPropagation();
+            const position = item.classList.contains("drop-target-top") ? "above" : "below";
+            item.classList.remove("drop-target-top", "drop-target-bottom");
+            
+            try {
+              const raw = e.dataTransfer.getData("text/plain") || e.dataTransfer.getData("text");
+              const d = JSON.parse(raw);
+              if (d.type === "object" && d.id) {
+                reorderInList("object", d.id, obj.id, position);
+              }
+            } catch(err) {}
+        };
+
+        item.appendChild(visBtn);
+        item.appendChild(label);
+        item.appendChild(upBtn);
+        item.appendChild(downBtn);
+        item.appendChild(delBtn);
+        item.querySelectorAll("button, span").forEach(el => el.setAttribute("draggable", "false"));
+        list.appendChild(item);
+    });
+
     updateHeadUsage();
   }
 
@@ -930,9 +1332,48 @@ export function initApp() {
     };
   }
 
-  function pasteCharacterFromClipboard() {
-    if (!characterClipboard) return;
-    const data = characterClipboard;
+  function buildObjectCopyData(obj) {
+    if (!obj) return null;
+    try {
+      return JSON.parse(JSON.stringify(obj));
+    } catch (err) {
+      return null;
+    }
+  }
+
+  function pasteObjectFromData(data) {
+    if (!data) return;
+    if (!drawCanvas) return;
+    const cloned = buildObjectCopyData(data);
+    if (!cloned) return;
+    const newObj = { ...cloned, id: buildObjectId() };
+    delete newObj.preview;
+    delete newObj._layerOrderIndex; 
+    ensureLayerOrder(newObj);
+
+    const offset = 20;
+    if (lastContextMenuPosition) {
+      const rect = drawCanvas.getBoundingClientRect();
+      const scaleX = drawCanvas.width / rect.width;
+      const scaleY = drawCanvas.height / rect.height;
+      const clickX = (lastContextMenuPosition.x - rect.left) * scaleX;
+      const clickY = (lastContextMenuPosition.y - rect.top) * scaleY;
+      const bounds = getObjectBoundsLocal(newObj);
+      newObj.x = clickX - bounds.minX;
+      newObj.y = clickY - bounds.minY;
+    } else {
+      newObj.x = (newObj.x || 0) + offset;
+      newObj.y = (newObj.y || 0) + offset;
+    }
+    drawObjects.push(newObj);
+    selectObject(newObj.id);
+    renderObjects();
+    renderLayersList();
+    saveSceneObjects();
+  }
+
+  function pasteCharacterFromData(data) {
+    if (!data) return;
     const newName = getUniqueCharacterName(`${data.name} Copy`);
     const newChar = createCharacter(newName, data.skin || STEVE_SKIN);
     if (!newChar) return;
@@ -984,7 +1425,21 @@ export function initApp() {
     newChar.wrapper.style.display = newChar.visible ? "block" : "none";
 
     selectCharacter(newChar.id);
-    renderCharactersList();
+    renderLayersList();
+  }
+
+  function setSceneClipboard(type, data) {
+    if (!data) {
+      sceneClipboard = null;
+      return;
+    }
+    sceneClipboard = { type, data };
+  }
+
+  function pasteSceneClipboard() {
+    if (!sceneClipboard) return;
+    if (sceneClipboard.type === "character") pasteCharacterFromData(sceneClipboard.data);
+    if (sceneClipboard.type === "object") pasteObjectFromData(sceneClipboard.data);
   }
 
   const existingContextMenu = document.getElementById("characterContextMenu");
@@ -1013,9 +1468,9 @@ export function initApp() {
     const pasteBtn = characterContextMenu.querySelector('[data-action="paste"]');
     if (copyBtn) copyBtn.style.display = targetId ? "block" : "none";
     if (pasteBtn)
-      pasteBtn.style.display = characterClipboard ? "block" : "none";
+      pasteBtn.style.display = sceneClipboard ? "block" : "none";
 
-    if (!targetId && !characterClipboard) return;
+    if (!targetId && !sceneClipboard) return;
 
     characterContextMenu.dataset.targetId = targetId || "";
     characterContextMenu.style.display = "block";
@@ -1036,9 +1491,9 @@ export function initApp() {
     if (action === "copy") {
       const id = characterContextMenu.dataset.targetId;
       const c = characters.find(ch => ch.id === id);
-      characterClipboard = buildCharacterCopyData(c);
+      setSceneClipboard("character", buildCharacterCopyData(c));
     }
-    if (action === "paste") pasteCharacterFromClipboard();
+    if (action === "paste") pasteSceneClipboard();
     closeCharacterContextMenu();
   });
 
@@ -1047,11 +1502,108 @@ export function initApp() {
     if (e.key === "Escape") closeCharacterContextMenu();
   });
 
+  const existingObjectMenu = document.getElementById("objectContextMenu");
+  const objectContextMenu = existingObjectMenu || document.createElement("div");
+  if (!existingObjectMenu) {
+    objectContextMenu.id = "objectContextMenu";
+    objectContextMenu.innerHTML = `
+      <button type="button" data-action="copy">Copy</button>
+      <button type="button" data-action="paste">Paste</button>
+      <button type="button" data-action="bringForward">Bring Forward</button>
+      <button type="button" data-action="sendBackward">Send Backward</button>
+      <button type="button" data-action="delete">Delete</button>
+    `;
+    document.body.appendChild(objectContextMenu);
+  }
+
+  refreshObjectMenuLabels = () => {
+    const copyBtn = objectContextMenu.querySelector('[data-action="copy"]');
+    const pasteBtn = objectContextMenu.querySelector('[data-action="paste"]');
+    const bringBtn = objectContextMenu.querySelector('[data-action="bringForward"]');
+    const sendBtn = objectContextMenu.querySelector('[data-action="sendBackward"]');
+    const deleteBtn = objectContextMenu.querySelector('[data-action="delete"]');
+    if (copyBtn) copyBtn.textContent = t("copy");
+    if (pasteBtn) pasteBtn.textContent = t("paste");
+    if (bringBtn) bringBtn.textContent = t("objectBringForward");
+    if (sendBtn) sendBtn.textContent = t("objectSendBackward");
+    if (deleteBtn) deleteBtn.textContent = t("objectDelete");
+  };
+  refreshObjectMenuLabels();
+
+  const closeObjectContextMenu = () => {
+    objectContextMenu.style.display = "none";
+  };
+
+  const openObjectContextMenu = (x, y) => {
+    lastContextMenuPosition = { x, y };
+    const copyBtn = objectContextMenu.querySelector('[data-action="copy"]');
+    const pasteBtn = objectContextMenu.querySelector('[data-action="paste"]');
+    if (copyBtn) copyBtn.style.display = selectedObjectId ? "block" : "none";
+    if (pasteBtn) pasteBtn.style.display = sceneClipboard ? "block" : "none";
+
+    const menuWidth = objectContextMenu.offsetWidth || 160;
+    const menuHeight = objectContextMenu.offsetHeight || 100;
+    const maxX = window.innerWidth - menuWidth - 8;
+    const maxY = window.innerHeight - menuHeight - 8;
+    const clampedX = Math.max(8, Math.min(x, maxX));
+    const clampedY = Math.max(8, Math.min(y, maxY));
+    objectContextMenu.style.left = `${clampedX}px`;
+    objectContextMenu.style.top = `${clampedY}px`;
+    objectContextMenu.style.display = "block";
+  };
+
+  const bringObjectForward = id => {
+    const index = drawObjects.findIndex(obj => obj.id === id);
+    if (index < 0 || index === drawObjects.length - 1) return;
+    const next = drawObjects[index + 1];
+    drawObjects[index + 1] = drawObjects[index];
+    drawObjects[index] = next;
+  };
+
+  const sendObjectBackward = id => {
+    const index = drawObjects.findIndex(obj => obj.id === id);
+    if (index <= 0) return;
+    const prev = drawObjects[index - 1];
+    drawObjects[index - 1] = drawObjects[index];
+    drawObjects[index] = prev;
+  };
+
+  objectContextMenu.addEventListener("click", e => {
+    const action = e.target?.dataset?.action;
+    if (!action) return;
+    if (action === "paste") {
+      pasteSceneClipboard();
+      closeObjectContextMenu();
+      return;
+    }
+
+    const selected = getObjectById(selectedObjectId);
+    if (!selected) return;
+
+    if (action === "copy") setSceneClipboard("object", buildObjectCopyData(selected));
+    if (action === "bringForward") bringObjectForward(selected.id);
+    if (action === "sendBackward") sendObjectBackward(selected.id);
+    if (action === "delete") {
+      drawObjects = drawObjects.filter(obj => obj.id !== selected.id);
+      selectedObjectId = null;
+    }
+
+    renderObjects();
+    renderLayersList();
+    saveSceneObjects();
+    closeObjectContextMenu();
+  });
+
+  document.addEventListener("click", () => closeObjectContextMenu());
+  document.addEventListener("keydown", e => {
+    if (e.key === "Escape") closeObjectContextMenu();
+  });
+
   const charactersListEl = document.getElementById("charactersList");
   if (charactersListEl) {
     charactersListEl.addEventListener("contextmenu", e => {
       const item = e.target.closest(".characterItem");
-      if (!item && !characterClipboard) return;
+      if (!item && !sceneClipboard) return;
       e.preventDefault();
       openCharacterContextMenu(e.clientX, e.clientY, item?.dataset?.id || "");
     });
@@ -1060,7 +1612,7 @@ export function initApp() {
   if (renderArea) {
     renderArea.addEventListener("contextmenu", e => {
       if (e.target.closest(".charViewport")) return;
-      if (!characterClipboard) return;
+      if (!sceneClipboard) return;
       e.preventDefault();
       openCharacterContextMenu(e.clientX, e.clientY, "");
     });
@@ -1133,7 +1685,7 @@ export function initApp() {
         if (characters.length > 0) selectCharacter(characters[0].id);
         else selectedCharacterId = null;
       }
-      renderCharactersList();
+      renderLayersList();
     };
     wrapper.appendChild(deleteViewportBtn);
 
@@ -1243,7 +1795,7 @@ export function initApp() {
 
     characters.push(c);
     selectedCharacterId = id;
-    renderCharactersList();
+    renderLayersList();
     selectCharacter(id);
     return c;
   }
@@ -1337,7 +1889,7 @@ export function initApp() {
     updateHeadUsage();
 
     // selection: bring selected to front, enable its controls, disable others
-    characters.forEach(ch => {
+    characters.forEach((ch, index) => {
       const is = ch.id === id;
       if (ch.wrapper) ch.wrapper.classList.toggle("active", is);
       if (ch.wrapper) ch.wrapper.classList.toggle("movable", is && ch.moveEnabled);
@@ -1352,7 +1904,10 @@ export function initApp() {
           moveBtn.classList.toggle("active", is && ch.moveEnabled);
         }
       }
-      if (ch.wrapper) ch.wrapper.style.zIndex = is ? 200 : 100;
+      // Apply z-index based on array order (bottom of array = bottom layer = lower z-index)
+      // Array index 0 is at the bottom.
+      if (ch.wrapper) ch.wrapper.style.zIndex = 10 + index;
+      
       // Allow pointer events on selected character's canvas for rotation
       if (ch.canvas) {
         ch.canvas.style.pointerEvents = is ? "auto" : "none";
@@ -1368,7 +1923,7 @@ export function initApp() {
       }
     });
 
-    renderCharactersList();
+    renderLayersList();
   }
 
   // Wire addCharacter button
@@ -1411,6 +1966,961 @@ export function initApp() {
   drawCtx.lineCap = "round";
   drawCtx.strokeStyle = currentColor;
 
+  const OBJECT_STORAGE_KEY = "sceneObjects";
+  const SELECTION_HANDLE_SIZE = 12;
+  const SIDE_HANDLE_THICKNESS = 6;
+  const RESIZE_BUTTON_SIZE = 20;
+  const MIN_SCALE = 0.1;
+
+  const buildObjectId = () =>
+    `obj_${Date.now()}_${Math.random().toString(16).slice(2, 8)}`;
+
+  const normalizeObject = obj => {
+    if (!obj || typeof obj !== "object") return null;
+    return {
+      id: obj.id || buildObjectId(),
+      type: obj.type || "stroke",
+      x: Number.isFinite(obj.x) ? obj.x : 0,
+      y: Number.isFinite(obj.y) ? obj.y : 0,
+      rotation: Number.isFinite(obj.rotation) ? obj.rotation : 0,
+      scaleX: Number.isFinite(obj.scaleX) ? obj.scaleX : 1,
+      scaleY: Number.isFinite(obj.scaleY) ? obj.scaleY : 1,
+      color: obj.color || "#000000",
+      lineWidth: Number.isFinite(obj.lineWidth) ? obj.lineWidth : 2,
+      points: Array.isArray(obj.points) ? obj.points : [],
+      shapeType: obj.shapeType || "rect",
+      width: Number.isFinite(obj.width) ? obj.width : 0,
+      height: Number.isFinite(obj.height) ? obj.height : 0,
+      text: obj.text || "",
+      fontSize: Number.isFinite(obj.fontSize) ? obj.fontSize : 36,
+      fontFamily: obj.fontFamily || '"Space Grotesk", "Segoe UI", sans-serif',
+      fontWeight: Number.isFinite(obj.fontWeight) ? obj.fontWeight : 700
+    };
+  };
+
+  const saveSceneObjects = () => {
+    localStorage.setItem(OBJECT_STORAGE_KEY, JSON.stringify(drawObjects));
+  };
+
+  const loadSceneObjects = () => {
+    try {
+      const stored = localStorage.getItem(OBJECT_STORAGE_KEY);
+      if (!stored) return;
+      const parsed = JSON.parse(stored);
+      if (Array.isArray(parsed)) {
+        const normalized = parsed.map(normalizeObject).filter(Boolean);
+        const legacyErasers = normalized.filter(obj => obj.type === "eraser");
+        drawObjects = normalized.filter(obj => obj.type !== "eraser");
+        
+        // Restore layer indices and counter
+        let maxIndex = 0;
+        drawObjects.forEach(obj => {
+          if (typeof obj._layerOrderIndex === "number") {
+            if (obj._layerOrderIndex > maxIndex) maxIndex = obj._layerOrderIndex;
+          }
+        });
+        layerOrderCounter = Math.max(layerOrderCounter, maxIndex + 1);
+        
+        drawObjects.forEach(ensureLayerOrder);
+
+        legacyErasers.forEach(eraser => applyEraserToStrokes(eraser));
+        if (legacyErasers.length > 0) saveSceneObjects();
+      }
+    } catch (err) {
+      drawObjects = [];
+    }
+  };
+
+  const getObjectById = id => drawObjects.find(obj => obj.id === id);
+
+  const getTextMetrics = obj => {
+    const lines = (obj.text || "").split("\n");
+    const fontSize = Math.max(8, Number(obj.fontSize) || 36);
+    const lineHeight = Math.round(fontSize * 1.2);
+    drawCtx.save();
+    drawCtx.font = `${obj.fontWeight || 700} ${fontSize}px ${obj.fontFamily || '"Space Grotesk", "Segoe UI", sans-serif'}`;
+    const maxWidth = Math.max(...lines.map(line => drawCtx.measureText(line).width), 1);
+    drawCtx.restore();
+    return { maxWidth, lineHeight, height: lineHeight * lines.length, lines };
+  };
+
+  const getObjectBoundsLocal = obj => {
+    if (obj.type === "text") {
+      const { maxWidth, height } = getTextMetrics(obj);
+      return {
+        minX: -maxWidth / 2,
+        maxX: maxWidth / 2,
+        minY: -height / 2,
+        maxY: height / 2
+      };
+    }
+
+    if (obj.type === "shape" && obj.shapeType === "line") {
+      const width = Math.max(1, obj.width || 0);
+      const height = Math.max(obj.lineWidth || 2, 6);
+      return {
+        minX: -width / 2,
+        maxX: width / 2,
+        minY: -height / 2,
+        maxY: height / 2
+      };
+    }
+
+    if (obj.type === "shape") {
+      const width = Math.max(1, obj.width || 0);
+      const height = Math.max(1, obj.height || 0);
+      return {
+        minX: -width / 2,
+        maxX: width / 2,
+        minY: -height / 2,
+        maxY: height / 2
+      };
+    }
+
+    if (obj.type === "stroke" || obj.type === "eraser") {
+      if (!obj.points || obj.points.length === 0) {
+        return { minX: -1, maxX: 1, minY: -1, maxY: 1 };
+      }
+      const xs = obj.points.map(p => p.x);
+      const ys = obj.points.map(p => p.y);
+      const minX = Math.min(...xs);
+      const maxX = Math.max(...xs);
+      const minY = Math.min(...ys);
+      const maxY = Math.max(...ys);
+      const pad = (obj.lineWidth || 2) / 2 + 2;
+      return {
+        minX: minX - pad,
+        maxX: maxX + pad,
+        minY: minY - pad,
+        maxY: maxY + pad
+      };
+    }
+
+    return { minX: -1, maxX: 1, minY: -1, maxY: 1 };
+  };
+
+  const applyObjectTransform = (ctx, obj) => {
+    ctx.translate(obj.x || 0, obj.y || 0);
+    ctx.rotate(obj.rotation || 0);
+    ctx.scale(obj.scaleX || 1, obj.scaleY || 1);
+  };
+
+  const renderObject = obj => {
+    drawCtx.save();
+    applyObjectTransform(drawCtx, obj);
+    drawCtx.globalCompositeOperation = obj.type === "eraser" ? "destination-out" : "source-over";
+
+    if (obj.type === "stroke" || obj.type === "eraser") {
+      if (obj.points.length > 0) {
+        drawCtx.lineCap = "round";
+        drawCtx.strokeStyle = obj.color || "#000000";
+        drawCtx.lineWidth = obj.lineWidth || 2;
+        drawCtx.beginPath();
+        drawCtx.moveTo(obj.points[0].x, obj.points[0].y);
+        obj.points.slice(1).forEach(pt => drawCtx.lineTo(pt.x, pt.y));
+        drawCtx.stroke();
+      }
+    } else if (obj.type === "shape") {
+      const width = Math.max(1, obj.width || 0);
+      const height = Math.max(1, obj.height || 0);
+      drawCtx.fillStyle = obj.color || "#000000";
+      drawCtx.strokeStyle = obj.color || "#000000";
+      drawCtx.lineWidth = obj.lineWidth || 2;
+
+      if (obj.shapeType === "line") {
+        drawCtx.beginPath();
+        drawCtx.moveTo(-width / 2, 0);
+        drawCtx.lineTo(width / 2, 0);
+        drawCtx.stroke();
+      } else if (obj.shapeType === "rect") {
+        drawCtx.fillRect(-width / 2, -height / 2, width, height);
+      } else if (obj.shapeType === "circle") {
+        drawCtx.beginPath();
+        drawCtx.arc(0, 0, Math.max(width, height) / 2, 0, 2 * Math.PI);
+        drawCtx.fill();
+      } else if (obj.shapeType === "triangle") {
+        drawCtx.beginPath();
+        drawCtx.moveTo(0, -height / 2);
+        drawCtx.lineTo(width / 2, height / 2);
+        drawCtx.lineTo(-width / 2, height / 2);
+        drawCtx.closePath();
+        drawCtx.fill();
+      } else if (obj.shapeType === "polygon") {
+        if (obj.points && obj.points.length > 0) {
+          drawCtx.beginPath();
+          drawCtx.moveTo(obj.points[0].x, obj.points[0].y);
+          obj.points.slice(1).forEach(pt => drawCtx.lineTo(pt.x, pt.y));
+          drawCtx.closePath();
+          drawCtx.fill();
+        }
+      }
+    } else if (obj.type === "text") {
+      const { maxWidth, lineHeight, lines } = getTextMetrics(obj);
+      drawCtx.fillStyle = obj.color || "#000000";
+      drawCtx.font = `${obj.fontWeight || 700} ${obj.fontSize || 36}px ${obj.fontFamily || '"Space Grotesk", "Segoe UI", sans-serif'}`;
+      drawCtx.textBaseline = "top";
+      drawCtx.textAlign = "left";
+      const startX = -maxWidth / 2;
+      const startY = -(lineHeight * lines.length) / 2;
+      lines.forEach((line, index) => {
+        drawCtx.fillText(line, startX, startY + index * lineHeight);
+      });
+    }
+
+    drawCtx.restore();
+  };
+
+  const transformPoint = (x, y, obj) => {
+    const scaleX = obj.scaleX || 1;
+    const scaleY = obj.scaleY || 1;
+    const cos = Math.cos(obj.rotation || 0);
+    const sin = Math.sin(obj.rotation || 0);
+    const sx = x * scaleX;
+    const sy = y * scaleY;
+    return {
+      x: (obj.x || 0) + sx * cos - sy * sin,
+      y: (obj.y || 0) + sx * sin + sy * cos
+    };
+  };
+
+  const getSelectionHandles = obj => {
+    const bounds = getObjectBoundsLocal(obj);
+    const center = { x: obj.x || 0, y: obj.y || 0 };
+    const width = bounds.maxX - bounds.minX;
+    const height = bounds.maxY - bounds.minY;
+    const scaleX = Math.max(0.001, Math.abs(obj.scaleX || 1));
+    const scaleY = Math.max(0.001, Math.abs(obj.scaleY || 1));
+    const baseWorld = Math.min(width * scaleX, height * scaleY);
+    const maxSize = Math.max(1, Math.floor(baseWorld));
+    const resizeSize = Math.min(RESIZE_BUTTON_SIZE, Math.max(1, maxSize - 2));
+    const padWorld = 1;
+    const insetX = Math.min((resizeSize / 2 + padWorld) / scaleX, width / 2);
+    const insetY = Math.min((resizeSize / 2 + padWorld) / scaleY, height / 2);
+    const resizeLocal = {
+      x: bounds.minX + insetX,
+      y: bounds.minY + insetY
+    };
+
+    const handles = [
+      {
+        type: "resize",
+        width: resizeSize,
+        height: resizeSize,
+        ...transformPoint(resizeLocal.x, resizeLocal.y, obj)
+      },
+      {
+        type: "n",
+        width: SELECTION_HANDLE_SIZE,
+        height: SIDE_HANDLE_THICKNESS,
+        ...transformPoint(0, bounds.minY, obj)
+      },
+      {
+        type: "s",
+        width: SELECTION_HANDLE_SIZE,
+        height: SIDE_HANDLE_THICKNESS,
+        ...transformPoint(0, bounds.maxY, obj)
+      },
+      {
+        type: "e",
+        width: SIDE_HANDLE_THICKNESS,
+        height: SELECTION_HANDLE_SIZE,
+        ...transformPoint(bounds.maxX, 0, obj)
+      },
+      {
+        type: "w",
+        width: SIDE_HANDLE_THICKNESS,
+        height: SELECTION_HANDLE_SIZE,
+        ...transformPoint(bounds.minX, 0, obj)
+      }
+    ];
+
+    return handles.map(handle => ({
+      ...handle,
+      center,
+      rotation: obj.rotation || 0
+    }));
+  };
+
+  const drawRoundedRect = (ctx, x, y, w, h, r) => {
+    const radius = Math.max(0, Math.min(r, Math.min(w, h) / 2));
+    if (ctx.roundRect) {
+      ctx.roundRect(x, y, w, h, radius);
+      return;
+    }
+    ctx.moveTo(x + radius, y);
+    ctx.lineTo(x + w - radius, y);
+    ctx.quadraticCurveTo(x + w, y, x + w, y + radius);
+    ctx.lineTo(x + w, y + h - radius);
+    ctx.quadraticCurveTo(x + w, y + h, x + w - radius, y + h);
+    ctx.lineTo(x + radius, y + h);
+    ctx.quadraticCurveTo(x, y + h, x, y + h - radius);
+    ctx.lineTo(x, y + radius);
+    ctx.quadraticCurveTo(x, y, x + radius, y);
+  };
+
+  const drawSelectionOutline = obj => {
+    if (!obj || isExporting) return;
+    const bounds = getObjectBoundsLocal(obj);
+    const corners = [
+      transformPoint(bounds.minX, bounds.minY, obj),
+      transformPoint(bounds.maxX, bounds.minY, obj),
+      transformPoint(bounds.maxX, bounds.maxY, obj),
+      transformPoint(bounds.minX, bounds.maxY, obj)
+    ];
+
+    drawCtx.save();
+    drawCtx.globalCompositeOperation = "source-over";
+    drawCtx.strokeStyle = "#60a5fa";
+    drawCtx.lineWidth = 2;
+    drawCtx.beginPath();
+    drawCtx.moveTo(corners[0].x, corners[0].y);
+    corners.slice(1).forEach(pt => drawCtx.lineTo(pt.x, pt.y));
+    drawCtx.closePath();
+    drawCtx.stroke();
+
+    const handles = getSelectionHandles(obj);
+    handles.forEach(handle => {
+      const width = handle.width || SELECTION_HANDLE_SIZE;
+      const height = handle.height || SELECTION_HANDLE_SIZE;
+      drawCtx.fillStyle = handle.type === "resize" ? "#0ea5e9" : "#ffffff";
+      drawCtx.strokeStyle = "#1d4ed8";
+      drawCtx.lineWidth = 1.5;
+      drawCtx.save();
+      drawCtx.translate(handle.x, handle.y);
+      drawCtx.rotate(handle.rotation || 0);
+      drawCtx.beginPath();
+      if (handle.type === "resize") {
+        const radius = Math.min(3, Math.floor(Math.min(width, height) * 0.15));
+        drawRoundedRect(drawCtx, -width / 2, -height / 2, width, height, radius);
+      } else {
+        drawCtx.rect(-width / 2, -height / 2, width, height);
+      }
+      drawCtx.fill();
+      drawCtx.stroke();
+
+      if (handle.type === "resize") {
+        drawCtx.strokeStyle = "#f8fafc";
+        drawCtx.lineWidth = 2;
+        const inset = Math.max(2, Math.floor(width * 0.2));
+        const len = Math.max(4, Math.floor(width * 0.3));
+        drawCtx.beginPath();
+        drawCtx.moveTo(-width / 2 + inset, -height / 2 + inset + len);
+        drawCtx.lineTo(-width / 2 + inset, -height / 2 + inset);
+        drawCtx.lineTo(-width / 2 + inset + len, -height / 2 + inset);
+        drawCtx.moveTo(width / 2 - inset - len, height / 2 - inset);
+        drawCtx.lineTo(width / 2 - inset, height / 2 - inset);
+        drawCtx.lineTo(width / 2 - inset, height / 2 - inset - len);
+        drawCtx.stroke();
+      }
+      drawCtx.restore();
+    });
+
+    drawCtx.restore();
+  };
+
+  const renderObjects = () => {
+    drawCtx.globalCompositeOperation = "source-over";
+    drawCtx.clearRect(0, 0, drawCanvas.width, drawCanvas.height);
+    drawObjects.forEach(obj => {
+      if (obj.visible === false) return;
+      renderObject(obj);
+    });
+    if (activeDrawObject) renderObject(activeDrawObject);
+    const selected = getObjectById(selectedObjectId);
+    if (selected && selected.visible !== false) drawSelectionOutline(selected);
+  };
+
+  const selectObject = id => {
+    selectedObjectId = id || null;
+    const selected = getObjectById(selectedObjectId);
+    if (selected && selected.color && colorPicker) {
+      currentColor = selected.color;
+      colorPicker.value = selected.color;
+      drawCtx.strokeStyle = currentColor;
+      drawCtx.fillStyle = currentColor;
+      updateTextEditorStyle();
+    }
+    renderObjects();
+  };
+
+  const screenToLocal = (x, y, obj) => {
+    const dx = x - (obj.x || 0);
+    const dy = y - (obj.y || 0);
+    const cos = Math.cos(-(obj.rotation || 0));
+    const sin = Math.sin(-(obj.rotation || 0));
+    const rx = dx * cos - dy * sin;
+    const ry = dx * sin + dy * cos;
+    return {
+      x: rx / (obj.scaleX || 1),
+      y: ry / (obj.scaleY || 1)
+    };
+  };
+
+  const hitTestStroke = (localPoint, obj) => {
+    if (!obj.points || obj.points.length < 2) return false;
+    const threshold = (obj.lineWidth || 2) / 2 + 6;
+    for (let i = 0; i < obj.points.length - 1; i += 1) {
+      const a = obj.points[i];
+      const b = obj.points[i + 1];
+      const dx = b.x - a.x;
+      const dy = b.y - a.y;
+      const lenSq = dx * dx + dy * dy || 1;
+      const t = Math.max(0, Math.min(1, ((localPoint.x - a.x) * dx + (localPoint.y - a.y) * dy) / lenSq));
+      const projX = a.x + t * dx;
+      const projY = a.y + t * dy;
+      const dist = Math.hypot(localPoint.x - projX, localPoint.y - projY);
+      if (dist <= threshold) return true;
+    }
+    return false;
+  };
+
+  const hitTestObject = (x, y) => {
+    for (let i = drawObjects.length - 1; i >= 0; i -= 1) {
+      const obj = drawObjects[i];
+      if (obj.visible === false) continue;
+      if (obj.type === "eraser") continue;
+      const local = screenToLocal(x, y, obj);
+      const bounds = getObjectBoundsLocal(obj);
+      if (obj.type === "stroke") {
+        if (hitTestStroke(local, obj)) return obj;
+      } else if (
+        local.x >= bounds.minX &&
+        local.x <= bounds.maxX &&
+        local.y >= bounds.minY &&
+        local.y <= bounds.maxY
+      ) {
+        return obj;
+      }
+    }
+    return null;
+  };
+
+  const splitShapeByEraser = (obj, eraserObj, eraserRadius) => {
+    // Determine the bounding box of the object in World Space (roughly) directly from properties
+    // or by transforming its corners.
+    const hw = (obj.width || 100) / 2;
+    const hh = (obj.height || 100) / 2;
+    // Corners in local
+    const localCorners = [{x: -hw, y: -hh}, {x: hw, y: -hh}, {x: hw, y: hh}, {x: -hw, y: hh}];
+    if (obj.shapeType === "polygon" && obj.points) {
+      // Use actual points for bounding box if available
+      const xs = obj.points.map(p => p.x);
+      const ys = obj.points.map(p => p.y);
+      localCorners[0] = {x: Math.min(...xs), y: Math.min(...ys)};
+      localCorners[1] = {x: Math.max(...xs), y: Math.min(...ys)};
+      localCorners[2] = {x: Math.max(...xs), y: Math.max(...ys)};
+      localCorners[3] = {x: Math.min(...xs), y: Math.max(...ys)};
+    }
+    
+    // Transform to World
+    const worldCorners = localCorners.map(p => transformPoint(p.x, p.y, obj));
+    
+    // Start with a padded bounding box around the object
+    const padding = (eraserRadius || 10) + 20;
+    const minX = Math.min(...worldCorners.map(p => p.x)) - padding;
+    const maxX = Math.max(...worldCorners.map(p => p.x)) + padding;
+    const minY = Math.min(...worldCorners.map(p => p.y)) - padding;
+    const maxY = Math.max(...worldCorners.map(p => p.y)) + padding;
+    
+    const w = Math.ceil(maxX - minX);
+    const h = Math.ceil(maxY - minY);
+    if (w < 1 || h < 1) return null;
+
+    // Create offscreen canvas
+    const cvs = document.createElement("canvas");
+    cvs.width = w;
+    cvs.height = h;
+    const ctx = cvs.getContext("2d");
+    
+    // Shift coordinate system so (minX, minY) is at (0,0)
+    ctx.translate(-minX, -minY);
+    
+    // Draw the Object (Transformation handled by applyObjectTransform)
+    ctx.save();
+    applyObjectTransform(ctx, obj);
+    ctx.fillStyle = "#000000";
+    ctx.strokeStyle = "#000000";
+    if (obj.shapeType === "rect") {
+      ctx.fillRect(-obj.width/2, -obj.height/2, obj.width, obj.height);
+    } else if (obj.shapeType === "circle") {
+      ctx.beginPath(); ctx.arc(0, 0, Math.max(obj.width, obj.height)/2, 0, Math.PI*2); ctx.fill();
+    } else if (obj.shapeType === "triangle") {
+      ctx.beginPath(); ctx.moveTo(0, -obj.height/2); ctx.lineTo(obj.width/2, obj.height/2); ctx.lineTo(-obj.width/2, obj.height/2); ctx.fill();
+    } else if (obj.shapeType === "polygon" && obj.points) {
+      ctx.beginPath(); ctx.moveTo(obj.points[0].x, obj.points[0].y); 
+      obj.points.slice(1).forEach(p => ctx.lineTo(p.x, p.y)); ctx.fill();
+    } else if (obj.shapeType === "line") {
+      ctx.lineWidth = Math.max(obj.lineWidth || 2, 4); 
+      ctx.beginPath(); 
+      ctx.moveTo(-obj.width/2, 0); 
+      ctx.lineTo(obj.width/2, 0); 
+      ctx.stroke();
+    }
+    ctx.restore();
+    
+    // Erase
+    ctx.globalCompositeOperation = "destination-out";
+    ctx.lineWidth = eraserObj.lineWidth || 10;
+    ctx.lineCap = "round";
+    ctx.lineJoin = "round";
+    ctx.beginPath();
+    if (eraserObj.points.length > 0) {
+      ctx.moveTo(eraserObj.points[0].x, eraserObj.points[0].y);
+      eraserObj.points.slice(1).forEach(p => ctx.lineTo(p.x, p.y));
+      ctx.stroke();
+    }
+    
+    // Analyze Result
+    const imgData = ctx.getImageData(0, 0, w, h);
+    const data = imgData.data;
+    const visited = new Uint8Array(w * h);
+    const pieces = [];
+    
+    // Helper: 2D index
+    const idx = (x, y) => (y * w + x);
+    
+    // Iterate over pixels to find islands
+    for (let y=0; y<h; y+=1) { 
+      for (let x=0; x<w; x+=1) {
+        if (visited[idx(x,y)]) continue;
+        if (data[idx(x,y)*4 + 3] > 50) { // Found solid pixel (alpha > 50)
+            // Flood Fill to mark this island
+            const stack = [[x,y]];
+            const islandPixels = new Set();
+            visited[idx(x,y)] = 1;
+            let iMinX=x, iMaxX=x, iMinY=y, iMaxY=y;
+            
+            while(stack.length) {
+              const [cx, cy] = stack.pop();
+              const key = `${cx},${cy}`;
+              if (!islandPixels.has(key)) {
+                islandPixels.add(key);
+                if(cx<iMinX) iMinX=cx; if(cx>iMaxX) iMaxX=cx;
+                if(cy<iMinY) iMinY=cy; if(cy>iMaxY) iMaxY=cy;
+                
+                const nbors = [[1,0],[-1,0],[0,1],[0,-1]];
+                for (const [dx, dy] of nbors) {
+                    const nx=cx+dx, ny=cy+dy;
+                    if (nx>=0 && nx<w && ny>=0 && ny<h && !visited[idx(nx,ny)] && data[idx(nx,ny)*4+3]>50) {
+                    visited[idx(nx,ny)] = 1;
+                    stack.push([nx,ny]);
+                    }
+                }
+              }
+            }
+            
+            // Filter noise
+            if (islandPixels.size < 10) continue; 
+            
+            // Generate Polygon
+            let startPx = null;
+            // Scan the implementation bounding box
+            outer: for(let py=iMinY; py<=iMaxY; py++) {
+                for(let px=iMinX; px<=iMaxX; px++) {
+                    if (islandPixels.has(`${px},${py}`)) {
+                        startPx = {x:px, y:py};
+                        break outer;
+                    }
+                }
+            }
+            if(!startPx) continue;
+
+            // Moore Tracing
+            const geometry = [];
+            let cx = startPx.x, cy = startPx.y;
+            geometry.push({x: cx, y: cy});
+            
+            const dirs = [
+                {x:0, y:-1}, {x:1, y:-1}, {x:1, y:0}, {x:1, y:1}, 
+                {x:0, y:1}, {x:-1, y:1}, {x:-1, y:0}, {x:-1, y:-1}
+            ];
+            let entryDir = 6; 
+            let boundaryIter = 0;
+            const maxIter = islandPixels.size * 5 + 1000;
+            
+            let tracerX = cx, tracerY = cy;
+            
+            do {
+                let foundNext = false;
+                for (let k=0; k<8; k++) {
+                    const checkDir = (entryDir + 1 + k) % 8; 
+                    const nx = tracerX + dirs[checkDir].x;
+                    const ny = tracerY + dirs[checkDir].y;
+                    if (islandPixels.has(`${nx},${ny}`)) {
+                        tracerX = nx; tracerY = ny;
+                        entryDir = (checkDir + 4) % 8; 
+                        foundNext = true;
+                        geometry.push({x: tracerX, y: tracerY});
+                        break;
+                    }
+                }
+                if (!foundNext) break;
+            } while ((tracerX !== startPx.x || tracerY !== startPx.y) && boundaryIter++ < maxIter);
+
+            // Simplify geometry 
+            const simplePoints = [];
+            for (let i=0; i<geometry.length; i+=2) { 
+                 simplePoints.push(geometry[i]);
+            }
+            if (simplePoints.length < 3) continue;
+            
+            const centerX = iMinX + (iMaxX - iMinX)/2;
+            const centerY = iMinY + (iMaxY - iMinY)/2;
+            const finalWorldX = minX + centerX;
+            const finalWorldY = minY + centerY;
+            
+            const finalPoints = simplePoints.map(p => ({
+                x: (p.x * 1) - centerX,
+                y: (p.y * 1) - centerY
+            }));
+            
+            pieces.push({
+                ...obj,
+                id: buildObjectId(),
+                type: "shape",
+                shapeType: "polygon",
+                x: finalWorldX,
+                y: finalWorldY,
+                width: (iMaxX - iMinX),
+                height: (iMaxY - iMinY),
+                rotation: 0,
+                points: finalPoints
+            });
+        }
+      }
+    }
+    
+    return pieces.length > 0 ? pieces : null;
+  };
+
+  const splitStrokeByEraser = (obj, eraserObj, eraserRadius) => {
+    if (!obj.points || obj.points.length < 2) return null;
+    const worldPoints = obj.points.map(p => transformPoint(p.x, p.y, obj));
+    const xs = worldPoints.map(p => p.x);
+    const ys = worldPoints.map(p => p.y);
+    const padding = (eraserRadius || 10) + Math.max(obj.lineWidth || 2, 4);
+    const minX = Math.min(...xs) - padding;
+    const maxX = Math.max(...xs) + padding;
+    const minY = Math.min(...ys) - padding;
+    const maxY = Math.max(...ys) + padding;
+
+    const w = Math.ceil(maxX - minX);
+    const h = Math.ceil(maxY - minY);
+    if (w < 1 || h < 1) return null;
+
+    const cvs = document.createElement("canvas");
+    cvs.width = w;
+    cvs.height = h;
+    const ctx = cvs.getContext("2d");
+    ctx.translate(-minX, -minY);
+
+    ctx.save();
+    ctx.strokeStyle = "#000000";
+    ctx.lineWidth = Math.max(obj.lineWidth || 2, 2);
+    ctx.lineCap = "round";
+    ctx.lineJoin = "round";
+    ctx.beginPath();
+    ctx.moveTo(worldPoints[0].x, worldPoints[0].y);
+    worldPoints.slice(1).forEach(p => ctx.lineTo(p.x, p.y));
+    ctx.stroke();
+    ctx.restore();
+
+    ctx.globalCompositeOperation = "destination-out";
+    ctx.lineWidth = eraserObj.lineWidth || 10;
+    ctx.lineCap = "round";
+    ctx.lineJoin = "round";
+    ctx.beginPath();
+    if (eraserObj.points.length > 0) {
+      ctx.moveTo(eraserObj.points[0].x, eraserObj.points[0].y);
+      eraserObj.points.slice(1).forEach(p => ctx.lineTo(p.x, p.y));
+      ctx.stroke();
+    }
+
+    const imgData = ctx.getImageData(0, 0, w, h);
+    const data = imgData.data;
+    const visited = new Uint8Array(w * h);
+    const pieces = [];
+    const idx = (x, y) => (y * w + x);
+
+    for (let y = 0; y < h; y += 1) {
+      for (let x = 0; x < w; x += 1) {
+        if (visited[idx(x, y)]) continue;
+        if (data[idx(x, y) * 4 + 3] > 50) {
+          const stack = [[x, y]];
+          const islandPixels = new Set();
+          visited[idx(x, y)] = 1;
+          let iMinX = x, iMaxX = x, iMinY = y, iMaxY = y;
+
+          while (stack.length) {
+            const [cx, cy] = stack.pop();
+            const key = `${cx},${cy}`;
+            if (!islandPixels.has(key)) {
+              islandPixels.add(key);
+              if (cx < iMinX) iMinX = cx; if (cx > iMaxX) iMaxX = cx;
+              if (cy < iMinY) iMinY = cy; if (cy > iMaxY) iMaxY = cy;
+
+              const nbors = [[1,0],[-1,0],[0,1],[0,-1]];
+              for (const [dx, dy] of nbors) {
+                const nx = cx + dx, ny = cy + dy;
+                if (nx >= 0 && nx < w && ny >= 0 && ny < h && !visited[idx(nx, ny)] && data[idx(nx, ny) * 4 + 3] > 50) {
+                  visited[idx(nx, ny)] = 1;
+                  stack.push([nx, ny]);
+                }
+              }
+            }
+          }
+
+          if (islandPixels.size < 10) continue;
+
+          let startPx = null;
+          outer: for (let py = iMinY; py <= iMaxY; py += 1) {
+            for (let px = iMinX; px <= iMaxX; px += 1) {
+              if (islandPixels.has(`${px},${py}`)) {
+                startPx = { x: px, y: py };
+                break outer;
+              }
+            }
+          }
+          if (!startPx) continue;
+
+          const geometry = [];
+          let cx = startPx.x, cy = startPx.y;
+          geometry.push({ x: cx, y: cy });
+
+          const dirs = [
+            {x:0, y:-1}, {x:1, y:-1}, {x:1, y:0}, {x:1, y:1},
+            {x:0, y:1}, {x:-1, y:1}, {x:-1, y:0}, {x:-1, y:-1}
+          ];
+          let entryDir = 6;
+          let boundaryIter = 0;
+          const maxIter = islandPixels.size * 5 + 1000;
+          let tracerX = cx, tracerY = cy;
+
+          do {
+            let foundNext = false;
+            for (let k = 0; k < 8; k += 1) {
+              const checkDir = (entryDir + 1 + k) % 8;
+              const nx = tracerX + dirs[checkDir].x;
+              const ny = tracerY + dirs[checkDir].y;
+              if (islandPixels.has(`${nx},${ny}`)) {
+                tracerX = nx; tracerY = ny;
+                entryDir = (checkDir + 4) % 8;
+                foundNext = true;
+                geometry.push({ x: tracerX, y: tracerY });
+                break;
+              }
+            }
+            if (!foundNext) break;
+          } while ((tracerX !== startPx.x || tracerY !== startPx.y) && boundaryIter++ < maxIter);
+
+          const simplePoints = [];
+          for (let i = 0; i < geometry.length; i += 2) {
+            simplePoints.push(geometry[i]);
+          }
+          if (simplePoints.length < 3) continue;
+
+          const centerX = iMinX + (iMaxX - iMinX) / 2;
+          const centerY = iMinY + (iMaxY - iMinY) / 2;
+          const finalWorldX = minX + centerX;
+          const finalWorldY = minY + centerY;
+
+          const finalPoints = simplePoints.map(p => ({
+            x: p.x - centerX,
+            y: p.y - centerY
+          }));
+
+          pieces.push({
+            ...obj,
+            id: buildObjectId(),
+            type: "shape",
+            shapeType: "polygon",
+            originType: "stroke",
+            x: finalWorldX,
+            y: finalWorldY,
+            width: (iMaxX - iMinX),
+            height: (iMaxY - iMinY),
+            rotation: 0,
+            points: finalPoints
+          });
+        }
+      }
+    }
+
+    return pieces.length > 0 ? pieces : null;
+  };
+
+  const applyEraserToStrokes = eraserObj => {
+    if (!eraserObj?.points || eraserObj.points.length < 2) return;
+    const eraserRadius = (eraserObj.lineWidth || 10) / 2;
+    const nextObjects = [];
+    let nextSelectedId = selectedObjectId;
+
+    const distancePointToSegment = (p, a, b) => {
+      const dx = b.x - a.x;
+      const dy = b.y - a.y;
+      const lenSq = dx * dx + dy * dy || 1;
+      const t = Math.max(0, Math.min(1, ((p.x - a.x) * dx + (p.y - a.y) * dy) / lenSq));
+      const projX = a.x + t * dx;
+      const projY = a.y + t * dy;
+      return Math.hypot(p.x - projX, p.y - projY);
+    };
+
+    const distancePointToPolyline = (p, points) => {
+      let min = Infinity;
+      for (let i = 0; i < points.length - 1; i += 1) {
+        const d = distancePointToSegment(p, points[i], points[i + 1]);
+        if (d < min) min = d;
+      }
+      return min;
+    };
+
+    const densifyPoints = (points, step) => {
+      if (points.length < 2) return points.slice();
+      const dense = [points[0]];
+      for (let i = 0; i < points.length - 1; i += 1) {
+        const a = points[i];
+        const b = points[i + 1];
+        const len = Math.hypot(b.x - a.x, b.y - a.y);
+        const steps = Math.max(1, Math.ceil(len / step));
+        for (let s = 1; s <= steps; s += 1) {
+          const t = s / steps;
+          dense.push({ x: a.x + (b.x - a.x) * t, y: a.y + (b.y - a.y) * t });
+        }
+      }
+      return dense;
+    };
+
+    // Helper: Recenter a stroke (World Points -> New Object)
+    const recenterStrokeSegments = (originalObj, worldPoints) => {
+        if (worldPoints.length < 2) return null;
+        const xs = worldPoints.map(p => p.x);
+        const ys = worldPoints.map(p => p.y);
+        const minX = Math.min(...xs);
+        const maxX = Math.max(...xs);
+        const minY = Math.min(...ys);
+        const maxY = Math.max(...ys);
+        const centerX = (minX + maxX) / 2;
+        const centerY = (minY + maxY) / 2;
+        
+        return {
+            ...originalObj,
+            id: buildObjectId(),
+            x: centerX,
+            y: centerY,
+            width: maxX - minX,
+            height: maxY - minY,
+            points: worldPoints.map(p => ({
+                x: p.x - centerX,
+                y: p.y - centerY
+            }))
+        };
+    };
+
+    drawObjects.forEach(obj => {
+      // Logic for Strokes 
+      if (obj.type === "stroke") {
+         const worldPoints = obj.points.map(p => transformPoint(p.x, p.y, obj));
+         const step = Math.max(1, (obj.lineWidth || 2) / 2);
+         const densePoints = densifyPoints(worldPoints, step);
+         const segments = [];
+         let current = [];
+
+         densePoints.forEach(pt => {
+           const d = distancePointToPolyline(pt, eraserObj.points);
+           if (d > eraserRadius) {
+             current.push(pt);
+           } else {
+             if (current.length > 1) {
+               segments.push(current);
+               current = [];
+             } else {
+               current = [];
+             }
+           }
+         });
+
+         if (current.length > 1) segments.push(current);
+         
+         if (segments.length === 0) {
+             if (obj.id === selectedObjectId) nextSelectedId = null;
+         } else if (segments.length === 1 && segments[0].length === worldPoints.length) {
+             nextObjects.push(obj);
+         } else {
+             segments.forEach(seg => {
+                 const newObj = recenterStrokeSegments(obj, seg);
+                 if (newObj) {
+                     nextObjects.push(newObj);
+                     if (obj.id === selectedObjectId && !nextSelectedId) {
+                         nextSelectedId = newObj.id;
+                     }
+                 }
+             });
+         }
+         return;
+      } 
+      
+      if (obj.type === "shape") {
+        const pieces = splitShapeByEraser(obj, eraserObj, eraserRadius);
+        if (pieces) {
+            pieces.forEach(p => nextObjects.push(p));
+            if (obj.id === selectedObjectId) {
+                const largest = pieces.reduce((prev, curr) => (curr.width * curr.height > prev.width * prev.height) ? curr : prev);
+                nextSelectedId = largest.id;
+            }
+        } else {
+            const objBounds = {
+                minX: obj.x - (obj.width||0)/2 - 200, maxX: obj.x + (obj.width||0)/2 + 200, 
+                minY: obj.y - (obj.height||0)/2 - 200, maxY: obj.y + (obj.height||0)/2 + 200
+            };
+            const eraserXs = eraserObj.points.map(p=>p.x); 
+            const eraserYs = eraserObj.points.map(p=>p.y);
+            const eMinX = Math.min(...eraserXs), eMaxX = Math.max(...eraserXs);
+            const eMinY = Math.min(...eraserYs), eMaxY = Math.max(...eraserYs);
+            
+            if (eMaxX < objBounds.minX || eMinX > objBounds.maxX || eMaxY < objBounds.minY || eMinY > objBounds.maxY) {
+                 nextObjects.push(obj); 
+            } else {
+                 if (pieces) {
+                     pieces.forEach(x => nextObjects.push(x));
+                 }
+            }
+        }
+        return;
+      }
+      
+      nextObjects.push(obj);
+    });
+
+    drawObjects = nextObjects;
+    if (selectedObjectId !== nextSelectedId) {
+       selectObject(nextSelectedId);
+    } else {
+       renderObjects();
+    }
+  };
+
+
+  const hitTestHandle = (x, y, obj) => {
+    if (!obj) return null;
+    const handles = getSelectionHandles(obj);
+    return handles.find(handle => {
+      const local = screenToLocal(x, y, {
+        x: handle.x,
+        y: handle.y,
+        rotation: handle.rotation || 0,
+        scaleX: 1,
+        scaleY: 1
+      });
+      const width = handle.width || SELECTION_HANDLE_SIZE;
+      const height = handle.height || SELECTION_HANDLE_SIZE;
+      return Math.abs(local.x) <= width / 2 && Math.abs(local.y) <= height / 2;
+    });
+  };
+
+  loadSceneObjects();
+  renderObjects();
+  renderLayersList();
+
   // Click on renderArea to deselect character
   renderArea.addEventListener("click", () => {
     selectCharacter(null);
@@ -1423,11 +2933,19 @@ export function initApp() {
   };
 
   const updateCanvasInteraction = () => {
-    const active = textMode || shapeMode || drawMode === "pen" || drawMode === "eraser";
+    const toolActive = textMode || shapeMode || drawMode === "pen" || drawMode === "eraser";
+    selectMode = !toolActive;
+    if (selectBtn) selectBtn.classList.toggle("selected", selectMode);
+    const active = toolActive || selectMode;
     drawCanvas.style.pointerEvents = active ? "auto" : "none";
     if (textMode) {
       if (brushCursor) brushCursor.style.display = "none";
       drawCanvas.style.cursor = "text";
+    } else if (selectMode) {
+      if (brushCursor) brushCursor.style.display = "none";
+      drawCanvas.style.cursor = "default";
+    } else {
+      drawCanvas.style.cursor = "default";
     }
   };
 
@@ -1440,28 +2958,46 @@ export function initApp() {
   };
 
   const commitTextEdit = () => {
-    if (!activeTextEditor?.el) return;
+    if (!activeTextEditor?.el || isCommittingText) return;
+    isCommittingText = true;
     const editor = activeTextEditor.el;
     const text = (editor.innerText || "").replace(/\r/g, "").trim();
     const { x, y } = activeTextEditor;
+    activeTextEditor = null;
     const sizeValue = Number(textSize?.value || 36);
     const fontSize = Math.max(8, Math.round(sizeValue));
 
     if (text) {
       const lines = text.split("\n");
       const lineHeight = Math.round(fontSize * 1.2);
+      const fontFamily = '"Space Grotesk", "Segoe UI", sans-serif';
       drawCtx.save();
-      drawCtx.fillStyle = currentColor;
-      drawCtx.font = `bold ${fontSize}px "Space Grotesk", "Segoe UI", sans-serif`;
-      drawCtx.textBaseline = "top";
-      lines.forEach((line, index) => {
-        drawCtx.fillText(line, x, y + index * lineHeight);
-      });
+      drawCtx.font = `bold ${fontSize}px ${fontFamily}`;
+      const maxWidth = Math.max(...lines.map(line => drawCtx.measureText(line).width), 1);
       drawCtx.restore();
+
+      const obj = {
+        id: buildObjectId(),
+        type: "text",
+        x: x + maxWidth / 2,
+        y: y + (lineHeight * lines.length) / 2,
+        rotation: 0,
+        scaleX: 1,
+        scaleY: 1,
+        color: currentColor,
+        fontSize,
+        fontFamily,
+        fontWeight: 700,
+        text
+      };
+      drawObjects.push(obj);
+      selectObject(obj.id);
+      renderObjects();
+      saveSceneObjects();
     }
 
     editor.remove();
-    activeTextEditor = null;
+    isCommittingText = false;
   };
 
   const cancelTextEdit = () => {
@@ -1521,6 +3057,7 @@ export function initApp() {
 
   const activateTextMode = () => {
     if (shapeMode) deactivateShapeMode();
+    if (selectMode) deactivateSelectMode();
     textMode = true;
     drawMode = "";
     drawCtx.globalCompositeOperation = "source-over";
@@ -1531,6 +3068,7 @@ export function initApp() {
     if (lineBtn) lineBtn.classList.remove("selected");
     setShapeSelected(false);
     selectCharacter(null);
+    selectObject(null);
     updateCanvasInteraction();
     updateBrushCursor();
   };
@@ -1543,7 +3081,30 @@ export function initApp() {
     updateBrushCursor();
   };
 
+  const activateSelectMode = () => {
+    if (textMode) deactivateTextMode();
+    if (shapeMode) deactivateShapeMode();
+    drawMode = "";
+    selectMode = true;
+    if (selectBtn) selectBtn.classList.add("selected");
+    if (penBtn) penBtn.classList.remove("selected");
+    if (eraserBtn) eraserBtn.classList.remove("selected");
+    if (lineBtn) lineBtn.classList.remove("selected");
+    setShapeSelected(false);
+    selectCharacter(null);
+    updateCanvasInteraction();
+    updateBrushCursor();
+  };
+
+  const deactivateSelectMode = () => {
+    selectMode = false;
+    if (selectBtn) selectBtn.classList.remove("selected");
+    updateCanvasInteraction();
+    updateBrushCursor();
+  };
+
   const activateShapeMode = () => {
+    if (selectMode) deactivateSelectMode();
     shapeMode = true;
     drawCanvas.style.pointerEvents = "auto";
     drawCtx.globalCompositeOperation = "source-over";
@@ -1555,6 +3116,7 @@ export function initApp() {
     if (eraserBtn) eraserBtn.classList.remove("selected");
     drawMode = "";
     selectCharacter(null);
+    selectObject(null);
   };
 
   const deactivateShapeMode = () => {
@@ -1577,6 +3139,7 @@ export function initApp() {
   if (lineBtn) {
     lineBtn.onclick = () => {
       if (textMode) deactivateTextMode();
+      if (selectMode) deactivateSelectMode();
       cancelTextEdit();
       if (shapeMode && shapeType === "line") {
         deactivateShapeMode();
@@ -1593,6 +3156,7 @@ export function initApp() {
         setShapeSelected(false);
         drawMode = "";
         selectCharacter(null);
+        selectObject(null);
       }
       updateCanvasInteraction();
     };
@@ -1601,6 +3165,7 @@ export function initApp() {
   if (penBtn) {
     penBtn.onclick = () => {
       if (textMode) deactivateTextMode();
+      if (selectMode) deactivateSelectMode();
       cancelTextEdit();
       if (drawMode === "pen") {
         // If pen is already active, toggle it off
@@ -1616,6 +3181,7 @@ export function initApp() {
         if (eraserBtn) eraserBtn.classList.remove("selected");
         // Deselect character to avoid interference
         selectCharacter(null);
+        selectObject(null);
       }
       updateCanvasInteraction();
       updateBrushCursor();
@@ -1631,9 +3197,17 @@ export function initApp() {
     penInitialized = true;
   }
 
+  if (!selectMode) {
+    selectMode = true;
+    if (selectBtn) selectBtn.classList.add("selected");
+    updateCanvasInteraction();
+    updateBrushCursor();
+  }
+
   if (eraserBtn) {
     eraserBtn.onclick = () => {
       if (textMode) deactivateTextMode();
+      if (selectMode) deactivateSelectMode();
       cancelTextEdit();
       if (drawMode === "eraser") {
         drawMode = "";
@@ -1645,6 +3219,7 @@ export function initApp() {
         drawCtx.globalCompositeOperation = "destination-out";
         eraserBtn.classList.add("selected");
         if (penBtn) penBtn.classList.remove("selected");
+        selectObject(null);
       }
       updateCanvasInteraction();
       updateBrushCursor();
@@ -1654,6 +3229,7 @@ export function initApp() {
   if (shapeBtn) {
     shapeBtn.onclick = () => {
       if (textMode) deactivateTextMode();
+      if (selectMode) deactivateSelectMode();
       cancelTextEdit();
       if (shapeMode) {
         // If shape mode is active, toggle it off
@@ -1673,18 +3249,37 @@ export function initApp() {
       if (textMode) {
         deactivateTextMode();
       } else {
+        if (selectMode) deactivateSelectMode();
         activateTextMode();
       }
     };
   }
 
+  if (selectBtn) {
+    selectBtn.onclick = () => {
+      if (selectMode) {
+        deactivateSelectMode();
+      } else {
+        activateSelectMode();
+      }
+    };
+  }
+
   if (colorPicker) {
-    colorPicker.onchange = e => {
+    const handleColorChange = e => {
       currentColor = e.target.value;
       drawCtx.strokeStyle = currentColor;
       drawCtx.fillStyle = currentColor;
       updateTextEditorStyle();
+      const selected = getObjectById(selectedObjectId);
+      if (selected) {
+        selected.color = currentColor;
+        renderObjects();
+        saveSceneObjects();
+      }
     };
+    colorPicker.oninput = handleColorChange;
+    colorPicker.onchange = handleColorChange;
   }
 
   if (brushSize) {
@@ -1702,7 +3297,29 @@ export function initApp() {
 
   if (clearCanvasBtn) {
     clearCanvasBtn.onclick = () => {
-      drawCtx.clearRect(0, 0, drawCanvas.width, drawCanvas.height);
+      drawObjects = [];
+      activeDrawObject = null;
+      selectedObjectId = null;
+      renderObjects();
+      saveSceneObjects();
+    };
+  }
+
+  const clearLayersBtn = document.getElementById("clearLayersBtn");
+  if (clearLayersBtn) {
+    clearLayersBtn.onclick = () => {
+      characters.forEach(ch => {
+        if (ch.wrapper) ch.wrapper.remove();
+      });
+      characters = [];
+      selectedCharacterId = null;
+      drawObjects = [];
+      activeDrawObject = null;
+      selectedObjectId = null;
+      renderObjects();
+      renderLayersList();
+      updateHeadUsage();
+      saveSceneObjects();
     };
   }
 
@@ -1718,11 +3335,44 @@ export function initApp() {
   }
 
   // Drawing events
-  drawCanvas.addEventListener("mousedown", startDrawing);
-  drawCanvas.addEventListener("mousemove", draw);
-  drawCanvas.addEventListener("mouseup", finishDrawing);
-  drawCanvas.addEventListener("mouseout", cancelDrawing);
-  drawCanvas.addEventListener("mousemove", updateCursor);
+  drawCanvas.addEventListener("mousedown", e => {
+    if (selectMode) {
+      handleSelectionDown(e);
+    } else {
+      startDrawing(e);
+    }
+  });
+  drawCanvas.addEventListener("mousemove", e => {
+    if (selectMode) {
+      handleSelectionMove(e);
+    } else {
+      draw(e);
+      updateCursor(e);
+    }
+  });
+  drawCanvas.addEventListener("mouseup", e => {
+    if (selectMode) {
+      handleSelectionUp(e);
+    } else {
+      finishDrawing(e);
+    }
+  });
+  drawCanvas.addEventListener("mouseout", () => {
+    if (selectMode) {
+      handleSelectionUp();
+    } else {
+      cancelDrawing();
+    }
+  });
+  drawCanvas.addEventListener("contextmenu", e => {
+    if (!selectMode) return;
+    const coords = getCanvasCoordinates(e);
+    const hit = hitTestObject(coords.x, coords.y);
+    if (!hit) return;
+    e.preventDefault();
+    selectObject(hit.id);
+    openObjectContextMenu(e.clientX, e.clientY);
+  });
   drawCanvas.addEventListener("mouseleave", () => {
     if (brushCursor) brushCursor.style.display = "none";
     drawCanvas.style.cursor = "default";
@@ -1733,77 +3383,79 @@ export function initApp() {
       startTextEdit(e);
       return;
     }
+
     const coords = getCanvasCoordinates(e);
     if (shapeMode) {
       shapeStart = { x: coords.x, y: coords.y };
-      // Capture the current canvas image so previews don't get committed
-      try {
-        shapeBaseImage = drawCtx.getImageData(0, 0, drawCanvas.width, drawCanvas.height);
-      } catch (err) {
-        shapeBaseImage = null;
-      }
-      shapeLastCoords = null;
+      activeDrawObject = {
+        id: buildObjectId(),
+        type: "shape",
+        shapeType,
+        x: coords.x,
+        y: coords.y,
+        width: 1,
+        height: 1,
+        rotation: 0,
+        scaleX: 1,
+        scaleY: 1,
+        color: currentColor,
+        lineWidth: Number(brushSize?.value || 2)
+      };
       isDrawing = true;
+      renderObjects();
     } else if (drawMode === "pen" || drawMode === "eraser") {
+      activeDrawObject = {
+        id: buildObjectId(),
+        type: drawMode === "eraser" ? "eraser" : "stroke",
+        x: 0,
+        y: 0,
+        rotation: 0,
+        scaleX: 1,
+        scaleY: 1,
+        color: currentColor,
+        lineWidth: Number(brushSize?.value || 2),
+        points: [{ x: coords.x, y: coords.y }],
+        preview: true
+      };
       isDrawing = true;
-      const rect = drawCanvas.getBoundingClientRect();
-      const scaleX = rect.width / drawCanvas.width;
-      const scaleY = rect.height / drawCanvas.height;
-      const screenRadius = (drawCtx.lineWidth / 2) * ((scaleX + scaleY) / 2);
-      const rx = screenRadius / scaleX;
-      const ry = screenRadius / scaleY;
-
-      drawCtx.beginPath();
-      drawCtx.ellipse(coords.x, coords.y, rx, ry, 0, 0, 2 * Math.PI);
-      drawCtx.fill();
-      drawCtx.beginPath();
-      drawCtx.moveTo(coords.x, coords.y);
+      renderObjects();
     }
   }
 
   function draw(e) {
-    if (!isDrawing) return;
+    if (!isDrawing || !activeDrawObject) return;
     const coords = getCanvasCoordinates(e);
 
     if (shapeMode && shapeStart) {
-      // Keep last coords for commit on mouseup
-      shapeLastCoords = coords;
-      // Restore base image to remove previous preview
-      if (shapeBaseImage) drawCtx.putImageData(shapeBaseImage, 0, 0);
-      else drawCtx.clearRect(0, 0, drawCanvas.width, drawCanvas.height);
-
-      const x = shapeStart.x;
-      const y = shapeStart.y;
-      const width = coords.x - x;
-      const height = coords.y - y;
-
-      drawCtx.strokeStyle = currentColor;
-      drawCtx.fillStyle = currentColor;
-      drawCtx.lineWidth = brushSize?.value || 50;
+      const dx = coords.x - shapeStart.x;
+      const dy = coords.y - shapeStart.y;
 
       if (shapeType === "line") {
-        drawCtx.beginPath();
-        drawCtx.moveTo(x, y);
-        drawCtx.lineTo(coords.x, coords.y);
-        drawCtx.stroke();
-      } else if (shapeType === "rect") {
-        drawCtx.fillRect(x, y, width, height);
+        const length = Math.hypot(dx, dy);
+        const angle = Math.atan2(dy, dx);
+        activeDrawObject.x = shapeStart.x + dx / 2;
+        activeDrawObject.y = shapeStart.y + dy / 2;
+        activeDrawObject.width = Math.max(1, length);
+        activeDrawObject.height = Math.max(1, Number(brushSize?.value || 2));
+        activeDrawObject.rotation = angle;
       } else if (shapeType === "circle") {
-        const radius = Math.sqrt(width * width + height * height) / 2;
-        drawCtx.beginPath();
-        drawCtx.arc(x, y, radius, 0, 2 * Math.PI);
-        drawCtx.fill();
-      } else if (shapeType === "triangle") {
-        drawCtx.beginPath();
-        drawCtx.moveTo(x + width / 2, y);
-        drawCtx.lineTo(x + width, y + height);
-        drawCtx.lineTo(x, y + height);
-        drawCtx.closePath();
-        drawCtx.fill();
+        const radius = Math.hypot(dx, dy) / 2;
+        activeDrawObject.x = shapeStart.x + dx / 2;
+        activeDrawObject.y = shapeStart.y + dy / 2;
+        activeDrawObject.width = Math.max(1, radius * 2);
+        activeDrawObject.height = Math.max(1, radius * 2);
+        activeDrawObject.rotation = 0;
+      } else {
+        activeDrawObject.x = shapeStart.x + dx / 2;
+        activeDrawObject.y = shapeStart.y + dy / 2;
+        activeDrawObject.width = Math.max(1, Math.abs(dx));
+        activeDrawObject.height = Math.max(1, Math.abs(dy));
+        activeDrawObject.rotation = 0;
       }
+      renderObjects();
     } else if (drawMode === "pen" || drawMode === "eraser") {
-      drawCtx.lineTo(coords.x, coords.y);
-      drawCtx.stroke();
+      activeDrawObject.points.push({ x: coords.x, y: coords.y });
+      renderObjects();
     }
   }
 
@@ -1811,6 +3463,11 @@ export function initApp() {
     if (textMode) {
       if (brushCursor) brushCursor.style.display = "none";
       drawCanvas.style.cursor = "text";
+      return;
+    }
+    if (selectMode) {
+      if (brushCursor) brushCursor.style.display = "none";
+      drawCanvas.style.cursor = "default";
       return;
     }
     if (drawMode === "pen" || drawMode === "eraser" || (shapeMode && shapeType === "line")) {
@@ -1849,63 +3506,166 @@ export function initApp() {
     }
   }
 
-  function finishDrawing(e) {
-    // Commit the drawing when mouse is released
-    if (shapeMode) {
-      // Use event coords if available, otherwise fallback to last tracked coords
-      const coords = e ? getCanvasCoordinates(e) : shapeLastCoords;
-      if (shapeStart && coords) {
-        // Restore base and draw final shape
-        if (shapeBaseImage) drawCtx.putImageData(shapeBaseImage, 0, 0);
-        const x = shapeStart.x;
-        const y = shapeStart.y;
-        const width = coords.x - x;
-        const height = coords.y - y;
-        drawCtx.strokeStyle = currentColor;
-        drawCtx.fillStyle = currentColor;
-        drawCtx.lineWidth = brushSize?.value || 50;
-        if (shapeType === "line") {
-          drawCtx.beginPath();
-          drawCtx.moveTo(x, y);
-          drawCtx.lineTo(coords.x, coords.y);
-          drawCtx.stroke();
-        } else if (shapeType === "rect") {
-          drawCtx.fillRect(x, y, width, height);
-        } else if (shapeType === "circle") {
-          const radius = Math.sqrt(width * width + height * height) / 2;
-          drawCtx.beginPath();
-          drawCtx.arc(x, y, radius, 0, 2 * Math.PI);
-          drawCtx.fill();
-        } else if (shapeType === "triangle") {
-          drawCtx.beginPath();
-          drawCtx.moveTo(x + width / 2, y);
-          drawCtx.lineTo(x + width, y + height);
-          drawCtx.lineTo(x, y + height);
-          drawCtx.closePath();
-          drawCtx.fill();
-        }
-      }
-      // Clear preview state
-      shapeStart = null;
-      shapeBaseImage = null;
-      shapeLastCoords = null;
-      isDrawing = false;
-    } else {
-      isDrawing = false;
+  function handleSelectionDown(e) {
+    const coords = getCanvasCoordinates(e);
+    const selected = getObjectById(selectedObjectId);
+    const handle = selected ? hitTestHandle(coords.x, coords.y, selected) : null;
+
+    if (handle) {
+      isTransforming = true;
+      transformData = {
+        mode: "resize",
+        handle: handle.type,
+        startX: coords.x,
+        startY: coords.y,
+        startScaleX: selected.scaleX || 1,
+        startScaleY: selected.scaleY || 1,
+        bounds: getObjectBoundsLocal(selected)
+      };
+      return;
     }
+
+    const hit = hitTestObject(coords.x, coords.y);
+    if (hit) {
+      selectObject(hit.id);
+      selectCharacter(null);
+      isTransforming = true;
+      transformData = {
+        mode: "move",
+        startX: coords.x,
+        startY: coords.y,
+        startObjX: hit.x,
+        startObjY: hit.y
+      };
+      return;
+    }
+
+    selectObject(null);
+    isTransforming = false;
+    transformData = null;
+  }
+
+  function handleSelectionMove(e) {
+    if (!isTransforming || !transformData) return;
+    const obj = getObjectById(selectedObjectId);
+    if (!obj) return;
+    const coords = getCanvasCoordinates(e);
+
+    if (transformData.mode === "move") {
+      obj.x = transformData.startObjX + (coords.x - transformData.startX);
+      obj.y = transformData.startObjY + (coords.y - transformData.startY);
+    } else if (transformData.mode === "resize") {
+      const local = screenToLocal(coords.x, coords.y, {
+        x: obj.x,
+        y: obj.y,
+        rotation: obj.rotation,
+        scaleX: transformData.startScaleX,
+        scaleY: transformData.startScaleY
+      });
+      const width = transformData.bounds.maxX - transformData.bounds.minX || 1;
+      const height = transformData.bounds.maxY - transformData.bounds.minY || 1;
+
+      if (transformData.handle === "resize") {
+        const nextScaleX = Math.max(MIN_SCALE, (Math.abs(local.x) * 2) / width);
+        const nextScaleY = Math.max(MIN_SCALE, (Math.abs(local.y) * 2) / height);
+        const nextScale = Math.max(nextScaleX, nextScaleY);
+        obj.scaleX = nextScale;
+        obj.scaleY = nextScale;
+      }
+
+      if (transformData.handle === "e" || transformData.handle === "w") {
+        const nextScaleX = Math.max(MIN_SCALE, (Math.abs(local.x) * 2) / width);
+        obj.scaleX = nextScaleX;
+      }
+
+      if (transformData.handle === "n" || transformData.handle === "s") {
+        const nextScaleY = Math.max(MIN_SCALE, (Math.abs(local.y) * 2) / height);
+        obj.scaleY = nextScaleY;
+      }
+    }
+
+    renderObjects();
+  }
+
+  function handleSelectionUp() {
+    if (!isTransforming) return;
+    isTransforming = false;
+    transformData = null;
+    renderObjects();
+    saveSceneObjects();
+  }
+
+  document.addEventListener("keydown", e => {
+    const target = e.target;
+    if (!selectMode) return;
+    if (activeTextEditor) return;
+    if (target && (target.tagName === "INPUT" || target.tagName === "TEXTAREA" || target.isContentEditable)) {
+      return;
+    }
+    if (e.key === "Delete" || e.key === "Backspace") {
+      const selected = getObjectById(selectedObjectId);
+      if (!selected) return;
+      drawObjects = drawObjects.filter(obj => obj.id !== selected.id);
+      selectedObjectId = null;
+      renderObjects();
+      saveSceneObjects();
+    }
+  });
+
+  function finishDrawing() {
+    if (!activeDrawObject) {
+      isDrawing = false;
+      return;
+    }
+
+    if (activeDrawObject.type === "stroke" || activeDrawObject.type === "eraser") {
+      const pts = activeDrawObject.points || [];
+      if (pts.length > 1) {
+        if (activeDrawObject.type === "eraser") {
+          applyEraserToStrokes(activeDrawObject);
+          if (eraserBtn) eraserBtn.classList.add("selected");
+          drawMode = "eraser";
+          updateCanvasInteraction();
+          updateBrushCursor();
+        } else {
+          const xs = pts.map(p => p.x);
+          const ys = pts.map(p => p.y);
+          const minX = Math.min(...xs);
+          const maxX = Math.max(...xs);
+          const minY = Math.min(...ys);
+          const maxY = Math.max(...ys);
+          const centerX = (minX + maxX) / 2;
+          const centerY = (minY + maxY) / 2;
+          activeDrawObject.points = pts.map(p => ({ x: p.x - centerX, y: p.y - centerY }));
+          activeDrawObject.x = centerX;
+          activeDrawObject.y = centerY;
+          delete activeDrawObject.preview;
+          ensureLayerOrder(activeDrawObject);
+          drawObjects.push(activeDrawObject);
+          selectObject(activeDrawObject.id);
+        }
+        saveSceneObjects();
+      }
+    } else if (activeDrawObject.type === "shape") {
+      if (activeDrawObject.width > 1 || activeDrawObject.height > 1) {
+        ensureLayerOrder(activeDrawObject);
+        drawObjects.push(activeDrawObject);
+        selectObject(activeDrawObject.id);
+        saveSceneObjects();
+      }
+    }
+
+    activeDrawObject = null;
+    shapeStart = null;
+    isDrawing = false;
+    renderObjects();
   }
 
   function cancelDrawing() {
-    // Cancel preview without committing (e.g., pointer left canvas)
-    if (shapeMode) {
-      if (shapeBaseImage) drawCtx.putImageData(shapeBaseImage, 0, 0);
-      shapeStart = null;
-      shapeBaseImage = null;
-      shapeLastCoords = null;
-      isDrawing = false;
-    } else {
-      isDrawing = false;
-    }
+    activeDrawObject = null;
+    shapeStart = null;
+    isDrawing = false;
+    renderObjects();
   }
 
   // --- RESET ---
@@ -2115,6 +3875,8 @@ export function initApp() {
       const target = document.getElementById("renderArea");
       if (!target) return;
 
+      commitTextEdit();
+
       const prevSelectedId = selectedCharacterId;
 
       // Save current styles
@@ -2133,6 +3895,9 @@ export function initApp() {
       // Hide all UI elements
       target.style.border = "none";
       if (transparentMode) target.style.background = "transparent";
+
+      isExporting = true;
+      renderObjects();
 
       // Hide delete buttons on viewports
       characters.forEach(c => {
@@ -2188,6 +3953,9 @@ export function initApp() {
       });
 
       if (exportBtn) exportBtn.style.display = "block";
+
+      isExporting = false;
+      renderObjects();
 
       // Restore character active/movable states and selection UI
       if (prevSelectedId && characters.some(c => c.id === prevSelectedId)) {
