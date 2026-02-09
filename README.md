@@ -1,29 +1,38 @@
 Minecraft Creator Studio
 
-Overview:
-Minecraft Creator Studio is a browser-based tool that lets you upload Minecraft skins, pose the character in 3D, and export the final render.
+Overview
+Minecraft Creator Studio is a browser-based toolbox for Minecraft creators. The current app focuses on the Scene Creator: pose characters in 3D, design backgrounds, and export the final render.
 
-Main Features:
-1) Upload and switch between multiple skins.
-2) Pose limbs and body parts with intuitive controls.
-3) Save and load poses using local storage.
-4) Customize the background (color, image, or transparency).
-5) Export the current view as an image.
+Key Features
+- Upload skins from a file or fetch by Minecraft username.
+- Manage multiple characters in a single scene.
+- Pose head, arms, and legs with quick reset controls.
+- Save and load poses with local storage.
+- Draw on the scene with pen, line, text, and shape tools.
+- Manage layers for characters, drawings, and background.
+- Customize the background (color, image, or transparency).
+- Export the scene as an image.
+- Light or dark theme toggle plus multi-language UI (EN, FR, ES, DE, IT).
 
-Programs and libraries used:
+App Areas
+- Home: entry screen that lists Scene Creator and upcoming tools.
+- Scene Creator: the full editor with the viewer, tools, and panels.
+
+Tech Stack
 - React + Vite
-- skinview3d for rendering Minecraft skins in 3D
-- html2canvas for exporting the rendered scene
+- skinview3d for 3D skin rendering
+- html2canvas for export
 
-Project Structure:
-index.html: Vite entry HTML.
-src/App.jsx: UI layout rendered by React.
-src/appLogic.js: Core logic for viewer setup, skin management, and event handling.
-src/main.jsx: React entry point.
-style.css: Styling for layout and components.
-public/skins/: Sample skins for quick testing.
-public/heads/: Head textures (optional assets).
-public/armors/: Armor textures (optional assets).
+Project Structure
+- index.html: Vite entry HTML.
+- src/App.jsx: UI layout and routing between home/editor.
+- src/appLogic.js: Core scene logic, event handling, and state.
+- src/main.jsx: React entry point.
+- style.css: Global styling and layout.
+- public/skins/: Sample skins.
+- public/heads/: Optional head textures.
+- public/armors/: Optional armor textures.
+- public/icons/: UI icons and badges.
 
 Development
 1) Install dependencies:
@@ -34,6 +43,3 @@ Development
 	npm run build
 4) Preview the production build:
 	npm run preview
-
-License:
-
