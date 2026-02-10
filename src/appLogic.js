@@ -100,6 +100,42 @@ export function initApp() {
   let lastContextMenuPosition = null;
   let layerOrderCounter = 1;
 
+  // --- UNDO/REDO HISTORY ---
+  const undoHistory = { states: [], index: -1, maxSize: 50, capturing: true };
+
+  function captureState() {
+    if (!undoHistory.capturing) return;
+    const snapshot = JSON.parse(JSON.stringify(drawObjects));
+    undoHistory.states = undoHistory.states.slice(0, undoHistory.index + 1);
+    undoHistory.states.push(snapshot);
+    if (undoHistory.states.length > undoHistory.maxSize) undoHistory.states.shift();
+    undoHistory.index = undoHistory.states.length - 1;
+  }
+
+  function undo() {
+    if (undoHistory.index <= 0) return;
+    undoHistory.index--;
+    undoHistory.capturing = false;
+    drawObjects = JSON.parse(JSON.stringify(undoHistory.states[undoHistory.index]));
+    selectedObjectId = null;
+    renderObjects();
+    renderLayersList();
+    localStorage.setItem("sceneObjects", JSON.stringify(drawObjects));
+    undoHistory.capturing = true;
+  }
+
+  function redo() {
+    if (undoHistory.index >= undoHistory.states.length - 1) return;
+    undoHistory.index++;
+    undoHistory.capturing = false;
+    drawObjects = JSON.parse(JSON.stringify(undoHistory.states[undoHistory.index]));
+    selectedObjectId = null;
+    renderObjects();
+    renderLayersList();
+    localStorage.setItem("sceneObjects", JSON.stringify(drawObjects));
+    undoHistory.capturing = true;
+  }
+
   const ensureLayerOrder = obj => {
     if (!obj) return;
     if (typeof obj._layerOrderIndex !== "number") {
@@ -182,7 +218,19 @@ export function initApp() {
       textPlaceholder: "Your text",
       objectBringForward: "Bring Forward",
       objectSendBackward: "Send Backward",
-      objectDelete: "Delete Object"
+      objectDelete: "Delete Object",
+      myScenes: "My Scenes",
+      saveScene: "Save Scene",
+      loadScene: "Load Scene",
+      nameScene: "Name your scene",
+      scenePlaceholder: "My scene",
+      sceneExists: "A scene with this name already exists. Overwrite?",
+      sceneSaved: "Scene saved successfully.",
+      noScenes: "No scenes saved yet.",
+      sceneLoaded: "Scene loaded.",
+      overwrite: "Overwrite",
+      undo: "Undo",
+      redo: "Redo"
     },
     fr: {
       appTitle: "Createur de Scene",
@@ -252,7 +300,19 @@ export function initApp() {
       textPlaceholder: "Votre texte",
       objectBringForward: "Mettre devant",
       objectSendBackward: "Mettre derriere",
-      objectDelete: "Supprimer l'objet"
+      objectDelete: "Supprimer l'objet",
+      myScenes: "Mes Scenes",
+      saveScene: "Sauver la scene",
+      loadScene: "Charger une scene",
+      nameScene: "Nommer votre scene",
+      scenePlaceholder: "Ma scene",
+      sceneExists: "Une scene avec ce nom existe deja. Ecraser ?",
+      sceneSaved: "Scene sauvegardee.",
+      noScenes: "Aucune scene sauvegardee.",
+      sceneLoaded: "Scene chargee.",
+      overwrite: "Ecraser",
+      undo: "Annuler",
+      redo: "Retablir"
     },
     es: {
       appTitle: "Creador de Escenas",
@@ -322,7 +382,19 @@ export function initApp() {
       textPlaceholder: "Tu texto",
       objectBringForward: "Traer al frente",
       objectSendBackward: "Enviar atras",
-      objectDelete: "Eliminar objeto"
+      objectDelete: "Eliminar objeto",
+      myScenes: "Mis Escenas",
+      saveScene: "Guardar escena",
+      loadScene: "Cargar escena",
+      nameScene: "Nombra tu escena",
+      scenePlaceholder: "Mi escena",
+      sceneExists: "Ya existe una escena con este nombre. Sobrescribir?",
+      sceneSaved: "Escena guardada.",
+      noScenes: "No hay escenas guardadas.",
+      sceneLoaded: "Escena cargada.",
+      overwrite: "Sobrescribir",
+      undo: "Deshacer",
+      redo: "Rehacer"
     },
     de: {
       appTitle: "Szenenersteller",
@@ -392,7 +464,19 @@ export function initApp() {
       textPlaceholder: "Dein Text",
       objectBringForward: "Nach vorne",
       objectSendBackward: "Nach hinten",
-      objectDelete: "Objekt loeschen"
+      objectDelete: "Objekt loeschen",
+      myScenes: "Meine Szenen",
+      saveScene: "Szene speichern",
+      loadScene: "Szene laden",
+      nameScene: "Szene benennen",
+      scenePlaceholder: "Meine Szene",
+      sceneExists: "Eine Szene mit diesem Namen existiert bereits. Ueberschreiben?",
+      sceneSaved: "Szene gespeichert.",
+      noScenes: "Noch keine Szenen gespeichert.",
+      sceneLoaded: "Szene geladen.",
+      overwrite: "Ueberschreiben",
+      undo: "Rueckgaengig",
+      redo: "Wiederherstellen"
     },
     it: {
       appTitle: "Creatore di Scene",
@@ -462,7 +546,19 @@ export function initApp() {
       textPlaceholder: "Il tuo testo",
       objectBringForward: "Porta avanti",
       objectSendBackward: "Porta indietro",
-      objectDelete: "Elimina oggetto"
+      objectDelete: "Elimina oggetto",
+      myScenes: "Le mie Scene",
+      saveScene: "Salva scena",
+      loadScene: "Carica scena",
+      nameScene: "Dai un nome alla scena",
+      scenePlaceholder: "La mia scena",
+      sceneExists: "Una scena con questo nome esiste gia. Sovrascrivere?",
+      sceneSaved: "Scena salvata.",
+      noScenes: "Nessuna scena salvata.",
+      sceneLoaded: "Scena caricata.",
+      overwrite: "Sovrascrivere",
+      undo: "Annulla",
+      redo: "Ripeti"
     }
   };
 
@@ -2000,6 +2096,7 @@ export function initApp() {
 
   const saveSceneObjects = () => {
     localStorage.setItem(OBJECT_STORAGE_KEY, JSON.stringify(drawObjects));
+    captureState();
   };
 
   const loadSceneObjects = () => {
@@ -2918,6 +3015,7 @@ export function initApp() {
   };
 
   loadSceneObjects();
+  captureState();
   renderObjects();
   renderLayersList();
 
