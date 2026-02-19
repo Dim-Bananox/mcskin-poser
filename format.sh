@@ -8,6 +8,6 @@ fi
 
 echo "🎨 Démarrage du formatage..."
 
-npx prettier --write "*.html" "src/**/*.{html,css,js,jsx}" --ignore-path .gitignore
+npx prettier --write "*.html" "src/**/*.{html,css,js,jsx,cjs}" --ignore-path .gitignore
 
 echo "✅ Terminé ! Tous les fichiers HTML, CSS et JS sont formatés."

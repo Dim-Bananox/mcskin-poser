@@ -49,12 +49,11 @@ export default function App() {
 							<option value='it'>Italiano</option>
 						</select>
 					</div>
-				</div>{' '}
-				,
+				</div>
 				<header className='homeHero'>
 					<img
 						className='homeLogo'
-						src='./icons/website_logo.png'
+						src='/icons/website_logo.png'
 						alt='Minecraft Creator Studio logo'
 					/>
 					<div className='homeHeroText'>
@@ -67,6 +66,7 @@ export default function App() {
 						</p>
 					</div>
 				</header>
+
 				<section className='homeGrid'>
 					<a className='homeCard homeCard--live' href={buildAppUrl('scene')}>
 						<div className='homeCardMeta' data-i18n='homeAvailable'>
@@ -125,6 +125,7 @@ export default function App() {
 						</p>
 					</a>
 				</section>
+
 				<div className='homeLegal'>
 					Minecraft is a trademark of Mojang Studios. This site is not affiliated with or
 					endorsed by Mojang or Microsoft.
@@ -136,7 +137,7 @@ export default function App() {
 	return (
 		<>
 			<a className='homeBackButton' href={buildHomeUrl()}>
-				Retour a l'accueil
+				Retour à l&apos;accueil
 			</a>
 			<div className='topControls'>
 				<button
@@ -345,24 +346,12 @@ export default function App() {
 						</button>
 					</div>
 
-					<div className='panelSection panelSection--layers'>
+					<div className='panelSection'>
 						<h3 data-i18n='layers'>Layers</h3>
-						<div className='layersScroll'>
-							<div className='layerGroupItems'>
-								<h4 data-i18n='layersCharacters'>Characters</h4>
-								<div
-									id='layersListCharacters'
-									className='layersList layersListBox'
-								></div>
-							</div>
-							<div className='layerGroupItems'>
-								<h4 data-i18n='layersObjects'>Objects</h4>
-								<div
-									id='layersListObjects'
-									className='layersList layersListBox'
-								></div>
-							</div>
-						</div>
+						<button id='clearLayersBtn' className='btnGhost' data-i18n='clearLayers'>
+							Clear Layers
+						</button>
+						<div id='layersList' className='layersList'></div>
 					</div>
 				</div>
 
@@ -542,7 +531,9 @@ export default function App() {
 				<div className='appModalContent' role='dialog' aria-modal='true'>
 					<h3 id='modalTitle'>Modal</h3>
 					<p id='modalMessage'></p>
-					<label id='modalLabel' htmlFor='modalInput'></label>
+					<label id='modalLabel' htmlFor='modalInput'>
+						Text
+					</label>
 					<input id='modalInput' type='text' />
 					<div className='appModalActions'>
 						<button id='modalCancel'>Cancel</button>
